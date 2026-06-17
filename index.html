@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DSP Factory Calculator — крафты, раскладка ILS/PLS</title>
+<meta name="description" content="Калькулятор фабрики Dyson Sphere Program: соотношения крафтов, раскладка логистических станций (ILS/PLS), импорт/экспорт. RU · EN · 中文.">
+<meta name="theme-color" content="#0e1320">
+<link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<!-- OpenGraph / превью ссылок. Абсолютные URL нужны для корректного превью в соцсетях. -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://0fuz.github.io/dsp-calc/">
+<meta property="og:title" content="DSP Factory Calculator">
+<meta property="og:description" content="Крафты, раскладка станций ILS/PLS, импорт/экспорт. RU · EN · 中文.">
+<meta property="og:image" content="https://0fuz.github.io/dsp-calc/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DSP Factory Calculator">
+<meta name="twitter:description" content="Крафты, раскладка станций ILS/PLS, импорт/экспорт.">
+<meta name="twitter:image" content="https://0fuz.github.io/dsp-calc/assets/og.png">
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1d2740; --line:#2a3550;
+    --txt:#dce4f5; --dim:#8a98b8; --acc:#5fd0ff; --acc2:#ffcf5f;
+    --blue:#4aa3ff; --red:#ff6b6b; --yellow:#ffd24a; --purple:#b07bff; --green:#4ade80; --white:#e8eefc;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--txt);font-size:13px}
+  #app{display:flex;flex-direction:column;height:100%}
+  header{padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-size:14px;margin:0;color:var(--acc);font-weight:600;letter-spacing:.3px}
+  .ctl{display:flex;align-items:center;gap:6px}
+  .side .ctl{justify-content:space-between;padding:4px 0;border-bottom:1px dashed #232d45}
+  .side .ctl select{max-width:160px}
+  label{color:var(--dim);font-size:12px}
+  select,input[type=number]{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    border-radius:6px;padding:4px 7px;font-size:12px}
+  input[type=number]{width:74px}
+  .combo{position:relative}
+  #target{width:190px;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 7px;font-size:12px}
+  .combolist{position:absolute;top:calc(100% + 3px);left:0;min-width:220px;z-index:50;background:var(--panel2);
+    border:1px solid var(--acc);border-radius:6px;max-height:300px;overflow:auto;display:none;
+    box-shadow:0 8px 24px rgba(0,0,0,.45)}
+  .combolist.open{display:block}
+  .combolist .opt{padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap}
+  .combolist .opt:hover,.combolist .opt.active{background:var(--line)}
+  .combolist .opt.dim{color:var(--dim);cursor:default}
+  .main{flex:1;display:flex;min-height:0}
+  .side{width:300px;min-width:300px;border-right:1px solid var(--line);background:var(--panel);
+    overflow:auto;padding:10px}
+  .side h2{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);
+    margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
+  .side h2:first-child{margin-top:0}
+  .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #232d45}
+  .row .v{color:var(--acc2);font-variant-numeric:tabular-nums}
+  .imp{display:flex;align-items:center;gap:6px;padding:2px 0;font-size:12px}
+  .imp input{accent-color:var(--acc)}
+  .stagewrap{flex:1;position:relative;overflow:hidden;background:
+    radial-gradient(circle at 1px 1px,#1a2336 1px,transparent 0) 0 0/26px 26px,var(--bg)}
+  svg{width:100%;height:100%;cursor:grab;display:block}
+  svg.drag{cursor:grabbing}
+  .board{fill:#0b101d;stroke:#33405e;stroke-width:2}
+  .node .room{fill:rgba(29,39,64,.82);stroke:var(--line);stroke-width:1.2}
+  .node.final .room{fill:rgba(42,36,24,.92);stroke:var(--acc2);stroke-width:2}
+  .node.src .room{fill:rgba(18,35,58,.85);stroke:#2f4a6e;stroke-dasharray:4 3}
+  .node text{fill:var(--txt)}
+  .node .nm{font-size:11px;font-weight:600}
+  .node .sub{font-size:9px;fill:var(--dim)}
+  .node .cnt{font-size:13px;font-weight:700;fill:var(--acc)}
+  .node .cnt2{font-size:9px;fill:var(--dim)}
+  .node .altlbl{font-size:9px;fill:var(--acc);font-weight:600}
+  .node.alt .room{stroke:var(--acc);stroke-width:1.8;stroke-dasharray:5 2}
+  .node .bcell{stroke:#0b101d;stroke-width:.7}
+  .src .nm{fill:#bcd4f5}
+  .edge{fill:none;stroke-width:3.4;opacity:.6;stroke-linejoin:round;stroke-linecap:round}
+  .edge.hl{opacity:.95}
+  .edge.over{stroke-dasharray:7 3}
+  .elabel.over{fill:#ff8f6b;stroke:#0b101d}
+  .arrow{opacity:.95}
+  .sorter{opacity:.95}
+  .elabel{font-size:9px;fill:var(--txt);paint-order:stroke;stroke:#0b101d;stroke-width:2.5px}
+  .hint{position:absolute;left:10px;bottom:8px;color:var(--dim);font-size:11px;
+    background:rgba(14,19,32,.7);padding:4px 8px;border-radius:6px;pointer-events:none}
+  .leghelp{position:absolute;right:10px;top:8px;z-index:6;width:24px;height:24px;border-radius:50%;
+    background:rgba(22,29,46,.9);border:1px solid var(--line);color:var(--dim);font:700 13px/1 inherit;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  .leghelp:hover{color:var(--acc);border-color:var(--acc)}
+  .legend{position:absolute;right:10px;top:40px;z-index:5;background:rgba(22,29,46,.94);
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:11px;pointer-events:none;
+    max-width:250px;display:none}
+  .legend.show,.leghelp:hover+.legend{display:block}
+  .legend div{display:flex;align-items:center;gap:6px;padding:1.5px 0;line-height:1.3}
+  .legend i{width:16px;height:3px;border-radius:2px;display:inline-block;flex:0 0 16px}
+  .impnote{position:absolute;left:10px;top:8px;background:rgba(22,29,46,.92);
+    border:1px solid var(--acc);border-radius:8px;padding:7px 9px;font-size:11px;max-width:220px;
+    max-height:46%;overflow:auto;pointer-events:none}
+  .impnote .t{color:var(--acc);font-weight:600;margin-bottom:5px}
+  .impnote .r{display:flex;align-items:center;gap:6px;padding:1px 0}
+  .impnote .r svg{flex:none;width:15px;height:15px}
+  .impnote .r span{flex:1;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .impnote .r b{color:var(--acc2);font-weight:600;font-variant-numeric:tabular-nums}
+  .totbtn{margin-left:auto;display:flex;gap:6px}
+  button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;
+    padding:5px 10px;font-size:12px;cursor:pointer}
+  button:hover{border-color:var(--acc)}
+  /* боковая панель: тоггл в духе macOS — иконка-сайдбар слева в шапке */
+  #togpanel{display:inline-flex;align-items:center;justify-content:center;width:30px;height:27px;padding:0;
+    flex:0 0 auto;color:var(--dim);background:transparent;border:1px solid transparent;border-radius:6px}
+  #togpanel:hover{color:var(--txt);background:var(--panel2);border-color:var(--line)}
+  #togpanel.active{color:var(--acc)}
+  .warn{color:var(--acc2);font-size:11px;margin-top:6px;line-height:1.4}
+  .node.hub .room{fill:rgba(29,39,64,.9);stroke:var(--line)}
+  .node.hub.final .room{fill:rgba(42,36,24,.92);stroke:var(--acc2);stroke-width:2}
+  .node.hub.cap .room{stroke:var(--red);stroke-width:1.8}
+  .node.hub{cursor:default;transition:opacity .08s}
+  .node.dimmed{opacity:.18}
+  .node.lit .room{stroke:var(--acc);stroke-width:2.2}
+  .sttag rect{fill:rgba(95,208,255,.16);stroke:var(--acc);stroke-width:.8}
+  .sttag.over rect{fill:rgba(255,107,107,.18);stroke:var(--red)}
+  .sttag text{fill:var(--acc);font-size:9px;font-weight:700}
+  .sttag.over text{fill:var(--red)}
+  .pchip rect{fill:rgba(120,160,220,.12);stroke:var(--line);stroke-width:.6}
+  .pchip.imp rect{fill:rgba(95,208,255,.12);stroke:var(--acc);stroke-width:.7}
+  .pchip.exp rect{fill:rgba(255,207,95,.14);stroke:var(--acc2);stroke-width:.8}
+  .pchip.raw rect{fill:rgba(95,208,255,.06);stroke:#2f4a6e;stroke-dasharray:3 2}
+  footer{padding:5px 14px;background:var(--panel);border-top:1px solid var(--line);font-size:10px;color:var(--dim);text-align:center;flex:none;line-height:1.5}
+  footer a{color:var(--acc);text-decoration:none}
+  .langsel{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;align-self:center}
+  .langsel button{background:var(--panel2);border:0;border-right:1px solid var(--line);border-radius:0;padding:5px 9px;font-size:12px;color:var(--dim);cursor:pointer}
+  .langsel button:last-child{border-right:0}
+  .langsel button:hover{color:var(--txt)}
+  .langsel button.on{background:var(--acc);color:#0b101d;font-weight:600}
+  @media (max-width:760px){
+    header{padding:6px 8px;gap:8px}
+    header h1{font-size:12px}
+    #target{width:130px}
+    .side{position:absolute;z-index:60;top:0;bottom:0;left:0;width:84%;max-width:280px;min-width:0;box-shadow:6px 0 24px rgba(0,0,0,.55)}
+    .legend{max-width:75vw}
+    .impnote{max-width:58%;font-size:10px}
+    footer{font-size:9px;padding:4px 8px}
+    .langsel button{padding:5px 7px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button id="togpanel" title="Панель / Panel / 面板" aria-label="Toggle panel"><svg viewBox="0 0 18 18" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="2.5" y="3.5" width="13" height="11" rx="2.5"/><line x1="7" y1="3.5" x2="7" y2="14.5"/></svg></button>
+    <h1>⚙ <span data-i18n="title">DSP — крафты: расчёт + раскладка</span></h1>
+    <div class="ctl"><label data-i18n="target">Цель</label>
+      <div class="combo">
+        <input id="target" placeholder="искать крафт…" autocomplete="off">
+        <div id="targetlist" class="combolist"></div>
+      </div></div>
+    <div class="ctl"><label data-i18n="perMin">шт/мин</label>
+      <input type="number" id="rate" value="60" min="0.1" step="1"></div>
+    <div class="ctl"><label data-i18n="presetAlts">Пресет альтов</label>
+      <select id="preset"><option value="late" selected data-i18n="preset_late">лейт-гейм ⛏ редкие руды</option><option value="base" data-i18n="preset_base">базовый (без альтов)</option></select></div>
+    <div class="totbtn">
+      <div class="langsel" id="lang" title="Language / Язык / 语言"><button data-l="ru">Рус</button><button data-l="en">EN</button><button data-l="zh">中文</button></div>
+      <button id="view">▦ Вид: хабы</button><button id="fit">⤢ <span data-i18n="fit">Вписать</span></button><button id="share" data-i18n="share" title="Скопировать ссылку на сборку">Ссылка</button><button id="png" title="Сохранить раскладку PNG">PNG</button></div>
+  </header>
+  <div class="main">
+    <aside class="side" id="side">
+      <h2 data-i18n="settings">Настройки</h2>
+      <div class="ctl"><label data-i18n="assembler">Сборщик</label>
+        <select id="asm"><option value="0.75">Mk.I</option><option value="1" selected>Mk.II</option><option value="1.5">Mk.III</option></select></div>
+      <div class="ctl"><label data-i18n="smelter">Плавильня</label>
+        <select id="smt"><option value="1" selected data-i18n="smt_arc">Дуговая</option><option value="2" data-i18n="smt_plane">Плоскостная</option></select></div>
+      <div class="ctl"><label data-i18n="proliferator">Пролифератор</label>
+        <select id="pf"><option value="1" selected data-i18n="pf_none">нет</option><option value="1.125">Mk.I +12.5%</option><option value="1.2">Mk.II +20%</option><option value="1.25">Mk.III +25%</option></select></div>
+      <div class="ctl"><label data-i18n="belt">Лента</label>
+        <select id="belt"><option value="360">Mk.I 6/с</option><option value="720" selected>Mk.II 12/с</option><option value="1800">Mk.III 30/с</option></select></div>
+      <div class="ctl"><label style="cursor:pointer"><input type="checkbox" id="fuse" checked style="accent-color:var(--acc);vertical-align:middle"> <span data-i18n="fuse">объединять цепочки</span></label></div>
+      <div class="ctl"><label data-i18n="shape">Форма</label>
+        <select id="shape"><option value="belt" selected data-i18n="sh_belt">компактно</option><option value="sq" data-i18n="sh_sq">квадрат</option><option value="w2" data-i18n="sh_w2">узкий ×2</option><option value="row" data-i18n="sh_row">ряд</option><option value="col" data-i18n="sh_col">колонка</option></select></div>
+      <div class="ctl"><label data-i18n="station">Станция</label>
+        <select id="station"><option value="ils" selected data-i18n="st_ils_opt">ILS · 5</option><option value="pls" data-i18n="st_pls_opt">PLS · 4</option></select></div>
+      <h2 style="display:none">Сырьё / импорт (шт/мин)</h2>
+      <div id="raws"></div>
+      <h2 data-i18n="builds">Постройки (всего)</h2>
+      <div id="builds"></div>
+      <h2 style="display:none">Площадь (тайлы)</h2>
+      <div id="area" style="display:none"></div>
+      <h2 style="display:none">Ленты (пропускная)</h2>
+      <div id="belts2" style="display:none"></div>
+      <h2 data-i18n="mining">Добыча (оценка)</h2>
+      <div id="mining"></div>
+      <h2 style="display:none">Пролифератор</h2>
+      <div id="prolif" style="display:none"></div>
+      <h2 style="display:none">Смета на стройку</h2>
+      <div id="buildcost" style="display:none"></div>
+      <h2 data-i18n="alts">Альт-рецепты</h2>
+      <div id="alts"></div>
+      <div class="warn" data-i18n="alts_note">Напр. «Refined Oil ← reforming-refine»: −33% сырой нефти ценой угля + утилизация водорода-побочки.</div>
+      <h2 data-i18n="imports_h">Считать как импорт</h2>
+      <div id="imports"></div>
+      <div class="warn" data-i18n="imports_note">Сними галку — и узел раскроется в полную цепочку. По умолчанию процессоры и титан помечены как импорт (твой сценарий).</div>
+    </aside>
+    <div class="stagewrap">
+      <svg id="stage"><g id="cam"></g></svg>
+      <div class="impnote" id="impnote"></div>
+      <button class="leghelp" id="leghelp" title="Обозначения / Legend / 图例">?</button>
+      <div class="legend" id="legend"></div>
+      <div class="hint" data-i18n="hint">Колёсико — зум · перетаскивание — панорама · сверху вниз = поток материала · клетки = реальный след построек</div>
+    </div>
+  </div>
+  <footer><span data-i18n="footer_disc">Неофициальный фан-инструмент, не связан с разработчиками.</span> · <span data-i18n="footer_credit">Иконки и данные —</span> <a href="https://github.com/factoriolab/factoriolab" target="_blank" rel="noopener">FactorioLab</a> (MIT) · Dyson Sphere Program © Youthcat Studio / Gamera Game</footer>
+</div>
+<script>
+// ---------- ДАННЫЕ: рецепты цепочек матриц (vanilla DSP) ----------
+// b: building, t: время(с), o: выход за крафт, in: {item:qty}
+const B={asm:'Сборщик',smt:'Плавильня',che:'Хим. завод',ref:'НПЗ',lab:'Матрица-лаб',col:'Коллайдер',fra:'Фракционатор'};
+const REC={"iron-ingot":{"b":"smt","t":1,"in":{"iron-ore":1},"out":{"iron-ingot":1}},"copper-ingot":{"b":"smt","t":1,"in":{"copper-ore":1},"out":{"copper-ingot":1}},"high-purity-silicon":{"b":"smt","t":2,"in":{"silicon-ore":2},"out":{"high-purity-silicon":1}},"titanium-ingot":{"b":"smt","t":2,"in":{"titanium-ore":2},"out":{"titanium-ingot":1}},"stone-brick":{"b":"smt","t":1,"in":{"stone":1},"out":{"stone-brick":1}},"energetic-graphite":{"b":"smt","t":2,"in":{"coal":2},"out":{"energetic-graphite":1}},"plasma-refining":{"b":"ref","t":4,"in":{"crude-oil":2},"out":{"hydrogen":1,"refined-oil":2}},"graphene":{"b":"che","t":3,"in":{"energetic-graphite":3,"sulfuric-acid":1},"out":{"graphene":2}},"plastic":{"b":"che","t":3,"in":{"energetic-graphite":1,"refined-oil":2},"out":{"plastic":1}},"proliferator-1":{"b":"asm","t":0.5,"in":{"coal":1},"out":{"proliferator-1":1}},"proliferator-2":{"b":"asm","t":1,"in":{"diamond":1,"proliferator-1":2},"out":{"proliferator-2":1}},"proliferator-3":{"b":"asm","t":2,"in":{"carbon-nanotube":1,"proliferator-2":2},"out":{"proliferator-3":1}},"df-magnum-ammo-box":{"b":"asm","t":1,"in":{"copper-ingot":3},"out":{"df-magnum-ammo-box":1}},"df-missile-set":{"b":"asm","t":2,"in":{"circuit-board":3,"copper-ingot":6,"df-combustible-unit":2,"df-engine":1},"out":{"df-missile-set":1}},"magnet":{"b":"smt","t":1.5,"in":{"iron-ore":1},"out":{"magnet":1}},"magnetic-coil":{"b":"asm","t":1,"in":{"copper-ingot":1,"magnet":2},"out":{"magnetic-coil":2}},"crystal-silicon":{"b":"smt","t":2,"in":{"high-purity-silicon":1},"out":{"crystal-silicon":1}},"titanium-alloy":{"b":"smt","t":12,"in":{"steel":4,"sulfuric-acid":8,"titanium-ingot":4},"out":{"titanium-alloy":4}},"glass":{"b":"smt","t":2,"in":{"stone":2},"out":{"glass":1}},"diamond":{"b":"smt","t":2,"in":{"energetic-graphite":1},"out":{"diamond":1}},"x-ray-cracking":{"b":"ref","t":4,"in":{"hydrogen":2,"refined-oil":1},"out":{"energetic-graphite":1,"hydrogen":3}},"graphene-advanced":{"b":"che","t":2,"in":{"fire-ice":2},"out":{"graphene":2,"hydrogen":1}},"organic-crystal":{"b":"che","t":6,"in":{"plastic":2,"refined-oil":1,"water":1},"out":{"organic-crystal":1}},"df-combustible-unit":{"b":"asm","t":3,"in":{"coal":3},"out":{"df-combustible-unit":1}},"df-explosive-unit":{"b":"che","t":6,"in":{"df-combustible-unit":2,"plastic":2,"sulfuric-acid":1},"out":{"df-explosive-unit":2}},"df-crystal-explosive-unit":{"b":"che","t":24,"in":{"casimir-crystal":1,"crystal-silicon":8,"df-explosive-unit":8},"out":{"df-crystal-explosive-unit":8}},"df-titanium-ammo-box":{"b":"asm","t":2,"in":{"df-magnum-ammo-box":1,"titanium-ingot":2},"out":{"df-titanium-ammo-box":1}},"df-supersonic-missile-set":{"b":"asm","t":4,"in":{"df-explosive-unit":4,"df-missile-set":2,"processor":4,"thruster":2},"out":{"df-supersonic-missile-set":2}},"steel":{"b":"smt","t":3,"in":{"iron-ingot":3},"out":{"steel":1}},"electric-motor":{"b":"asm","t":2,"in":{"gear":1,"iron-ingot":2,"magnetic-coil":1},"out":{"electric-motor":1}},"crystal-silicon-advanced":{"b":"asm","t":1.5,"in":{"fractal-silicon":1},"out":{"crystal-silicon":2}},"titanium-glass":{"b":"asm","t":5,"in":{"glass":2,"titanium-ingot":2,"water":2},"out":{"titanium-glass":2}},"prism":{"b":"asm","t":2,"in":{"glass":3},"out":{"prism":2}},"diamond-advanced":{"b":"smt","t":1.5,"in":{"kimberlite-ore":1},"out":{"diamond":2}},"reforming-refine":{"b":"ref","t":4,"in":{"coal":1,"hydrogen":1,"refined-oil":2},"out":{"refined-oil":3}},"titanium-crystal":{"b":"asm","t":4,"in":{"organic-crystal":1,"titanium-ingot":3},"out":{"titanium-crystal":1}},"organic-crystal-original":{"b":"asm","t":6,"in":{"log":20,"plant-fuel":30,"water":10},"out":{"organic-crystal":1}},"df-engine":{"b":"asm","t":3,"in":{"copper-ingot":2,"magnetic-coil":1},"out":{"df-engine":1}},"thruster":{"b":"asm","t":4,"in":{"copper-ingot":3,"steel":2},"out":{"thruster":1}},"reinforced-thruster":{"b":"asm","t":6,"in":{"electromagnetic-turbine":5,"titanium-alloy":5},"out":{"reinforced-thruster":1}},"df-superalloy-ammo-box":{"b":"asm","t":3,"in":{"df-titanium-ammo-box":1,"titanium-alloy":1},"out":{"df-superalloy-ammo-box":1}},"df-gravity-missile-set":{"b":"asm","t":6,"in":{"df-crystal-explosive-unit":6,"df-supersonic-missile-set":3,"strange-matter":3},"out":{"df-gravity-missile-set":3}},"gear":{"b":"asm","t":1,"in":{"iron-ingot":1},"out":{"gear":1}},"electromagnetic-turbine":{"b":"asm","t":2,"in":{"electric-motor":2,"magnetic-coil":2},"out":{"electromagnetic-turbine":1}},"silicon-ore":{"b":"smt","t":10,"in":{"stone":10},"out":{"silicon-ore":1}},"circuit-board":{"b":"asm","t":1,"in":{"copper-ingot":1,"iron-ingot":2},"out":{"circuit-board":2}},"graviton-lens":{"b":"asm","t":6,"in":{"diamond":4,"strange-matter":1},"out":{"graviton-lens":1}},"sulfuric-acid":{"b":"che","t":6,"in":{"refined-oil":6,"stone":8,"water":4},"out":{"sulfuric-acid":4}},"deuterium-fractionation":{"b":"fra","t":1,"in":{"hydrogen":0.01},"out":{"deuterium":0.01}},"carbon-nanotube":{"b":"che","t":4,"in":{"graphene":3,"titanium-ingot":1},"out":{"carbon-nanotube":2}},"strange-matter":{"b":"col","t":8,"in":{"deuterium":10,"iron-ingot":2,"particle-container":2},"out":{"strange-matter":1}},"logistics-bot":{"b":"asm","t":2,"in":{"df-engine":1,"iron-ingot":2,"processor":1},"out":{"logistics-bot":1}},"logistics-drone":{"b":"asm","t":4,"in":{"iron-ingot":5,"processor":2,"thruster":2},"out":{"logistics-drone":1}},"logistics-vessel":{"b":"asm","t":6,"in":{"processor":10,"reinforced-thruster":2,"titanium-alloy":10},"out":{"logistics-vessel":1}},"df-plasma-capsule":{"b":"asm","t":2,"in":{"deuterium":10,"graphene":1,"magnet":2},"out":{"df-plasma-capsule":1}},"df-shell-set":{"b":"asm","t":1.5,"in":{"copper-ingot":9,"df-combustible-unit":2},"out":{"df-shell-set":1}},"plasma-exciter":{"b":"asm","t":2,"in":{"magnetic-coil":4,"prism":2},"out":{"plasma-exciter":1}},"super-magnetic-ring":{"b":"asm","t":3,"in":{"electromagnetic-turbine":2,"energetic-graphite":1,"magnet":3},"out":{"super-magnetic-ring":1}},"particle-broadband":{"b":"asm","t":8,"in":{"carbon-nanotube":2,"crystal-silicon":2,"plastic":1},"out":{"particle-broadband":1}},"processor":{"b":"asm","t":3,"in":{"circuit-board":2,"microcrystalline-component":2},"out":{"processor":1}},"casimir-crystal":{"b":"asm","t":4,"in":{"graphene":2,"hydrogen":12,"titanium-crystal":1},"out":{"casimir-crystal":1}},"particle-container":{"b":"asm","t":4,"in":{"copper-ingot":2,"electromagnetic-turbine":2,"graphene":2},"out":{"particle-container":1}},"deuterium":{"b":"col","t":2.5,"in":{"hydrogen":10},"out":{"deuterium":5}},"carbon-nanotube-advanced":{"b":"che","t":4,"in":{"spiniform-stalagmite-crystal":6},"out":{"carbon-nanotube":2}},"solar-sail":{"b":"asm","t":4,"in":{"graphene":1,"photon-combiner":1},"out":{"solar-sail":2}},"frame-material":{"b":"asm","t":6,"in":{"carbon-nanotube":4,"high-purity-silicon":1,"titanium-alloy":1},"out":{"frame-material":1}},"dyson-sphere-component":{"b":"asm","t":8,"in":{"frame-material":3,"processor":3,"solar-sail":3},"out":{"dyson-sphere-component":1}},"small-carrier-rocket":{"b":"asm","t":6,"in":{"deuteron-fuel-rod":4,"dyson-sphere-component":2,"quantum-chip":2},"out":{"small-carrier-rocket":1}},"df-antimatter-capsule":{"b":"asm","t":2,"in":{"antimatter":10,"df-plasma-capsule":1,"hydrogen":10,"particle-container":1},"out":{"df-antimatter-capsule":1}},"df-high-explosive-shell-set":{"b":"asm","t":3,"in":{"df-explosive-unit":2,"df-shell-set":1,"titanium-ingot":6},"out":{"df-high-explosive-shell-set":1}},"photon-combiner":{"b":"asm","t":3,"in":{"circuit-board":1,"prism":2},"out":{"photon-combiner":1}},"photon-combiner-advanced":{"b":"asm","t":3,"in":{"circuit-board":1,"optical-grating-crystal":1},"out":{"photon-combiner":1}},"microcrystalline-component":{"b":"asm","t":2,"in":{"copper-ingot":1,"high-purity-silicon":2},"out":{"microcrystalline-component":1}},"quantum-chip":{"b":"asm","t":6,"in":{"plane-filter":2,"processor":2},"out":{"quantum-chip":1}},"casimir-crystal-advanced":{"b":"asm","t":4,"in":{"graphene":2,"hydrogen":12,"optical-grating-crystal":8},"out":{"casimir-crystal":1}},"particle-container-advanced":{"b":"asm","t":4,"in":{"copper-ingot":2,"unipolar-magnet":10},"out":{"particle-container":1}},"plane-filter":{"b":"asm","t":12,"in":{"casimir-crystal":1,"titanium-glass":2},"out":{"plane-filter":1}},"annihilation-constraint-sphere":{"b":"asm","t":20,"in":{"particle-container":1,"processor":1},"out":{"annihilation-constraint-sphere":1}},"hydrogen-fuel-rod":{"b":"asm","t":6,"in":{"hydrogen":10,"titanium-ingot":1},"out":{"hydrogen-fuel-rod":2}},"deuteron-fuel-rod":{"b":"asm","t":12,"in":{"deuterium":20,"super-magnetic-ring":1,"titanium-alloy":1},"out":{"deuteron-fuel-rod":2}},"antimatter-fuel-rod":{"b":"asm","t":24,"in":{"annihilation-constraint-sphere":1,"antimatter":12,"hydrogen":12,"titanium-alloy":1},"out":{"antimatter-fuel-rod":2}},"df-strange-annihilation-fuel-rod":{"b":"asm","t":32,"in":{"antimatter-fuel-rod":8,"df-core-element":1,"frame-material":1,"strange-matter":2},"out":{"df-strange-annihilation-fuel-rod":1}},"df-jamming-capsule":{"b":"asm","t":2,"in":{"electromagnetic-turbine":1,"hydrogen":3,"plasma-exciter":1},"out":{"df-jamming-capsule":1}},"df-crystal-shell-set":{"b":"asm","t":6,"in":{"df-crystal-explosive-unit":2,"df-high-explosive-shell-set":1,"titanium-alloy":3},"out":{"df-crystal-shell-set":1}},"df-prototype":{"b":"asm","t":2,"in":{"circuit-board":2,"df-engine":1,"iron-ingot":3,"plasma-exciter":1},"out":{"df-prototype":1}},"df-precision-drone":{"b":"asm","t":4,"in":{"circuit-board":2,"df-prototype":1,"electromagnetic-turbine":1,"photon-combiner":2},"out":{"df-precision-drone":1}},"df-attack-drone":{"b":"asm","t":4,"in":{"df-prototype":1,"electromagnetic-turbine":1,"particle-container":1,"processor":1},"out":{"df-attack-drone":1}},"df-corvette":{"b":"asm","t":5,"in":{"particle-container":3,"processor":2,"reinforced-thruster":1,"titanium-alloy":5},"out":{"df-corvette":1}},"df-destroyer":{"b":"asm","t":8,"in":{"frame-material":20,"processor":4,"reinforced-thruster":4,"strange-matter":1},"out":{"df-destroyer":1}},"space-warper":{"b":"asm","t":10,"in":{"graviton-lens":1},"out":{"space-warper":1}},"space-warper-advanced":{"b":"asm","t":10,"in":{"gravity-matrix":1},"out":{"space-warper":8}},"mass-energy-storage":{"b":"col","t":2,"in":{"critical-photon":2},"out":{"antimatter":2,"hydrogen":2}},"df-suppressing-capsule":{"b":"asm","t":8,"in":{"df-jamming-capsule":2,"super-magnetic-ring":1,"titanium-glass":2},"out":{"df-suppressing-capsule":2}},"foundation":{"b":"asm","t":1,"in":{"steel":1,"stone-brick":3},"out":{"foundation":1}},"electromagnetic-matrix":{"b":"lab","t":3,"in":{"circuit-board":1,"magnetic-coil":1},"out":{"electromagnetic-matrix":1}},"energy-matrix":{"b":"lab","t":6,"in":{"energetic-graphite":2,"hydrogen":2},"out":{"energy-matrix":1}},"structure-matrix":{"b":"lab","t":8,"in":{"diamond":1,"titanium-crystal":1},"out":{"structure-matrix":1}},"information-matrix":{"b":"lab","t":10,"in":{"particle-broadband":1,"processor":2},"out":{"information-matrix":1}},"gravity-matrix":{"b":"lab","t":24,"in":{"graviton-lens":1,"quantum-chip":1},"out":{"gravity-matrix":2}},"universe-matrix":{"b":"lab","t":15,"in":{"antimatter":1,"electromagnetic-matrix":1,"energy-matrix":1,"gravity-matrix":1,"information-matrix":1,"structure-matrix":1},"out":{"universe-matrix":1}}};
+const PREF={"iron-ingot":"iron-ingot","copper-ingot":"copper-ingot","high-purity-silicon":"high-purity-silicon","titanium-ingot":"titanium-ingot","stone-brick":"stone-brick","energetic-graphite":"energetic-graphite","refined-oil":"plasma-refining","graphene":"graphene","plastic":"plastic","proliferator-1":"proliferator-1","proliferator-2":"proliferator-2","proliferator-3":"proliferator-3","df-magnum-ammo-box":"df-magnum-ammo-box","df-missile-set":"df-missile-set","magnet":"magnet","magnetic-coil":"magnetic-coil","crystal-silicon":"crystal-silicon","titanium-alloy":"titanium-alloy","glass":"glass","diamond":"diamond","organic-crystal":"organic-crystal","df-combustible-unit":"df-combustible-unit","df-explosive-unit":"df-explosive-unit","df-crystal-explosive-unit":"df-crystal-explosive-unit","df-titanium-ammo-box":"df-titanium-ammo-box","df-supersonic-missile-set":"df-supersonic-missile-set","steel":"steel","electric-motor":"electric-motor","titanium-glass":"titanium-glass","prism":"prism","titanium-crystal":"titanium-crystal","df-engine":"df-engine","thruster":"thruster","reinforced-thruster":"reinforced-thruster","df-superalloy-ammo-box":"df-superalloy-ammo-box","df-gravity-missile-set":"df-gravity-missile-set","gear":"gear","electromagnetic-turbine":"electromagnetic-turbine","circuit-board":"circuit-board","graviton-lens":"graviton-lens","sulfuric-acid":"sulfuric-acid","carbon-nanotube":"carbon-nanotube","strange-matter":"strange-matter","logistics-bot":"logistics-bot","logistics-drone":"logistics-drone","logistics-vessel":"logistics-vessel","df-plasma-capsule":"df-plasma-capsule","df-shell-set":"df-shell-set","plasma-exciter":"plasma-exciter","super-magnetic-ring":"super-magnetic-ring","particle-broadband":"particle-broadband","processor":"processor","casimir-crystal":"casimir-crystal","particle-container":"particle-container","solar-sail":"solar-sail","frame-material":"frame-material","dyson-sphere-component":"dyson-sphere-component","small-carrier-rocket":"small-carrier-rocket","df-antimatter-capsule":"df-antimatter-capsule","df-high-explosive-shell-set":"df-high-explosive-shell-set","photon-combiner":"photon-combiner","microcrystalline-component":"microcrystalline-component","quantum-chip":"quantum-chip","plane-filter":"plane-filter","annihilation-constraint-sphere":"annihilation-constraint-sphere","hydrogen-fuel-rod":"hydrogen-fuel-rod","deuteron-fuel-rod":"deuteron-fuel-rod","antimatter-fuel-rod":"antimatter-fuel-rod","df-strange-annihilation-fuel-rod":"df-strange-annihilation-fuel-rod","df-jamming-capsule":"df-jamming-capsule","df-crystal-shell-set":"df-crystal-shell-set","df-prototype":"df-prototype","df-precision-drone":"df-precision-drone","df-attack-drone":"df-attack-drone","df-corvette":"df-corvette","df-destroyer":"df-destroyer","space-warper":"space-warper","df-suppressing-capsule":"df-suppressing-capsule","foundation":"foundation","electromagnetic-matrix":"electromagnetic-matrix","energy-matrix":"energy-matrix","structure-matrix":"structure-matrix","information-matrix":"information-matrix","gravity-matrix":"gravity-matrix","universe-matrix":"universe-matrix"};
+const ALTS=[{"id":"x-ray-cracking","out":"hydrogen"},{"id":"graphene-advanced","out":"graphene"},{"id":"crystal-silicon-advanced","out":"crystal-silicon"},{"id":"diamond-advanced","out":"diamond"},{"id":"reforming-refine","out":"refined-oil"},{"id":"organic-crystal-original","out":"organic-crystal"},{"id":"silicon-ore","out":"silicon-ore"},{"id":"deuterium-fractionation","out":"deuterium"},{"id":"deuterium","out":"deuterium"},{"id":"carbon-nanotube-advanced","out":"carbon-nanotube"},{"id":"photon-combiner-advanced","out":"photon-combiner"},{"id":"casimir-crystal-advanced","out":"casimir-crystal"},{"id":"particle-container-advanced","out":"particle-container"},{"id":"space-warper-advanced","out":"space-warper"},{"id":"mass-energy-storage","out":"antimatter"}];
+const NAME={"annihilation-constraint-sphere":"Annihilation Constraint Sphere","antimatter":"Antimatter","antimatter-fuel-rod":"Antimatter Fuel Rod","carbon-nanotube":"Carbon Nanotube","casimir-crystal":"Casimir Crystal","circuit-board":"Circuit Board","coal":"Coal","copper-ingot":"Copper Ingot","copper-ore":"Copper Ore","critical-photon":"Critical Photon","crude-oil":"Crude Oil","crystal-silicon":"Crystal Silicon","deuterium":"Deuterium","deuteron-fuel-rod":"Deuteron Fuel Rod","df-antimatter-capsule":"Antimatter Capsule","df-attack-drone":"Attack Drone","df-combustible-unit":"Combustible Unit","df-core-element":"Core Element","df-corvette":"Corvette","df-crystal-explosive-unit":"Crystal Explosive Unit","df-crystal-shell-set":"Crystal Shell Set","df-destroyer":"Destroyer","df-engine":"Engine","df-explosive-unit":"Explosive Unit","df-gravity-missile-set":"Gravity Missile Set","df-high-explosive-shell-set":"High-Explosive Shell Set","df-jamming-capsule":"Jamming Capsule","df-magnum-ammo-box":"Magnum Ammo Box","df-missile-set":"Missile Set","df-plasma-capsule":"Plasma Capsule","df-precision-drone":"Precision Drone","df-prototype":"Prototype","df-shell-set":"Shell Set","df-strange-annihilation-fuel-rod":"Strange Annihilation Fuel Rod","df-superalloy-ammo-box":"Superalloy Ammo Box","df-supersonic-missile-set":"Supersonic Missile Set","df-suppressing-capsule":"Suppressing Capsule","df-titanium-ammo-box":"Titanium Ammo Box","diamond":"Diamond","dyson-sphere-component":"Dyson Sphere Component","electric-motor":"Electric Motor","electromagnetic-matrix":"Electromagnetic Matrix","electromagnetic-turbine":"Electromagnetic Turbine","energetic-graphite":"Energetic Graphite","energy-matrix":"Energy Matrix","fire-ice":"Fire Ice","foundation":"Foundation","fractal-silicon":"Fractal Silicon","frame-material":"Frame Material","gear":"Gear","glass":"Glass","graphene":"Graphene","graviton-lens":"Graviton Lens","gravity-matrix":"Gravity Matrix","high-purity-silicon":"High-purity Silicon","hydrogen":"Hydrogen","hydrogen-fuel-rod":"Hydrogen Fuel Rod","information-matrix":"Information Matrix","iron-ingot":"Iron Ingot","iron-ore":"Iron Ore","kimberlite-ore":"Kimberlite Ore","log":"Log","logistics-bot":"Logistics Bot","logistics-drone":"Logistics Drone","logistics-vessel":"Interstellar Logistics Vessel","magnet":"Magnet","magnetic-coil":"Magnetic Coil","microcrystalline-component":"Microcrystalline Component","optical-grating-crystal":"Grating Crystal","organic-crystal":"Organic Crystal","particle-broadband":"Particle Broadband","particle-container":"Particle Container","photon-combiner":"Photon Combiner","plane-filter":"Plane Filter","plant-fuel":"Plant Fuel","plasma-exciter":"Plasma Exciter","plastic":"Plastic","prism":"Prism","processor":"Processor","proliferator-1":"Proliferator Mk.I","proliferator-2":"Proliferator Mk.II","proliferator-3":"Proliferator Mk.III","quantum-chip":"Quantum Chip","refined-oil":"Refined Oil","reinforced-thruster":"Reinforced Thruster","silicon-ore":"Silicon Ore","small-carrier-rocket":"Small Carrier Rocket","solar-sail":"Solar Sail","space-warper":"Space Warper","spiniform-stalagmite-crystal":"Stalagmite Crystal","steel":"Steel","stone":"Stone","stone-brick":"Stone Brick","strange-matter":"Strange Matter","structure-matrix":"Structure Matrix","sulfuric-acid":"Sulfuric Acid","super-magnetic-ring":"Super-magnetic Ring","thruster":"Thruster","titanium-alloy":"Titanium Alloy","titanium-crystal":"Titanium Crystal","titanium-glass":"Titanium Glass","titanium-ingot":"Titanium Ingot","titanium-ore":"Titanium Ore","unipolar-magnet":"Unipolar Magnet","universe-matrix":"Universe Matrix","water":"Water"};
+const ICON={"iron-ore":[0,0],"copper-ore":[64,0],"silicon-ore":[128,0],"titanium-ore":[192,0],"stone":[256,0],"coal":[320,0],"log":[384,0],"plant-fuel":[448,0],"fire-ice":[512,0],"kimberlite-ore":[576,0],"fractal-silicon":[640,0],"optical-grating-crystal":[704,0],"spiniform-stalagmite-crystal":[768,0],"unipolar-magnet":[832,0],"iron-ingot":[896,0],"copper-ingot":[960,0],"high-purity-silicon":[1024,0],"titanium-ingot":[1088,0],"stone-brick":[1152,0],"energetic-graphite":[1216,0],"steel":[1280,0],"titanium-alloy":[1344,0],"glass":[1408,0],"titanium-glass":[0,64],"prism":[64,64],"diamond":[128,64],"crystal-silicon":[192,64],"gear":[256,64],"magnet":[320,64],"magnetic-coil":[384,64],"electric-motor":[448,64],"electromagnetic-turbine":[512,64],"super-magnetic-ring":[576,64],"particle-container":[640,64],"strange-matter":[704,64],"circuit-board":[768,64],"processor":[832,64],"quantum-chip":[896,64],"microcrystalline-component":[960,64],"plane-filter":[1024,64],"particle-broadband":[1088,64],"plasma-exciter":[1152,64],"photon-combiner":[1216,64],"solar-sail":[1280,64],"water":[1344,64],"crude-oil":[1408,64],"refined-oil":[0,128],"sulfuric-acid":[64,128],"hydrogen":[128,128],"deuterium":[192,128],"antimatter":[256,128],"critical-photon":[320,128],"hydrogen-fuel-rod":[384,128],"deuteron-fuel-rod":[448,128],"antimatter-fuel-rod":[512,128],"df-strange-annihilation-fuel-rod":[576,128],"plastic":[640,128],"graphene":[704,128],"carbon-nanotube":[768,128],"organic-crystal":[832,128],"titanium-crystal":[896,128],"casimir-crystal":[960,128],"df-combustible-unit":[1024,128],"df-explosive-unit":[1088,128],"df-crystal-explosive-unit":[1152,128],"graviton-lens":[1216,128],"space-warper":[1280,128],"annihilation-constraint-sphere":[1344,128],"df-engine":[1408,128],"thruster":[0,192],"reinforced-thruster":[64,192],"logistics-bot":[128,192],"logistics-drone":[192,192],"logistics-vessel":[256,192],"frame-material":[320,192],"dyson-sphere-component":[384,192],"small-carrier-rocket":[448,192],"foundation":[512,192],"proliferator-1":[576,192],"proliferator-2":[640,192],"proliferator-3":[704,192],"df-magnum-ammo-box":[768,192],"df-titanium-ammo-box":[832,192],"df-superalloy-ammo-box":[896,192],"df-shell-set":[960,192],"df-high-explosive-shell-set":[1024,192],"df-crystal-shell-set":[1088,192],"df-plasma-capsule":[1152,192],"df-antimatter-capsule":[1216,192],"df-missile-set":[1280,192],"df-supersonic-missile-set":[1344,192],"df-gravity-missile-set":[1408,192],"df-jamming-capsule":[0,256],"df-suppressing-capsule":[64,256],"df-prototype":[128,256],"df-precision-drone":[192,256],"df-attack-drone":[256,256],"df-corvette":[320,256],"df-destroyer":[384,256],"df-dark-fog-matrix":[448,256],"df-silicon-based-neuron":[512,256],"df-matter-recombinator":[576,256],"df-negentropy-singularity":[640,256],"df-core-element":[704,256],"df-energy-shard":[768,256],"conveyor-belt-1":[832,256],"conveyor-belt-2":[896,256],"conveyor-belt-3":[960,256],"sorter-1":[1024,256],"sorter-2":[1088,256],"sorter-3":[1152,256],"sorter-4":[1216,256],"splitter":[1280,256],"automatic-piler":[1344,256],"traffic-monitor":[1408,256],"spray-coater":[0,320],"logistics-distributor":[64,320],"storage-1":[128,320],"storage-2":[192,320],"storage-tank":[256,320],"assembling-machine-1":[320,320],"assembling-machine-2":[384,320],"assembling-machine-3":[448,320],"df-recomposing-assembler":[512,320],"tesla-tower":[576,320],"wireless-power-tower":[640,320],"satellite-substation":[704,320],"wind-turbine":[768,320],"thermal-power-plant":[832,320],"mini-fusion-power-plant":[896,320],"geothermal-power-station":[960,320],"mining-machine":[1024,320],"advanced-mining-machine":[1088,320],"water-pump":[1152,320],"arc-smelter":[1216,320],"plane-smelter":[1280,320],"df-negentropy-smelter":[1344,320],"oil-extractor":[1408,320],"oil-refinery":[0,384],"chemical-plant":[64,384],"quantum-chemical-plant":[128,384],"fractionator":[192,384],"solar-panel":[256,384],"accumulator":[320,384],"accumulator-full":[384,384],"em-rail-ejector":[448,384],"ray-receiver":[512,384],"vertical-launching-silo":[576,384],"energy-exchanger":[640,384],"miniature-particle-collider":[704,384],"artificial-star":[768,384],"planetary-logistics-station":[832,384],"interstellar-logistics-station":[896,384],"orbital-collector":[960,384],"matrix-lab":[1024,384],"df-self-evolution-lab":[1088,384],"df-gauss-turret":[1152,384],"df-laser-turret":[1216,384],"df-implosion-cannon":[1280,384],"df-plasma-turret":[1344,384],"df-missile-turret":[1408,384],"df-jammer-tower":[0,448],"df-signal-tower":[64,448],"df-planetary-shield-generator":[128,448],"df-battlefield-analysis-base":[192,448],"df-plasma-turret-sr":[256,448],"electromagnetic-matrix":[320,448],"energy-matrix":[384,448],"structure-matrix":[448,448],"information-matrix":[512,448],"gravity-matrix":[576,448],"universe-matrix":[640,448],"plasma-refining":[704,448],"casimir-crystal-advanced":[768,448],"graphene-advanced":[832,448],"carbon-nanotube-advanced":[896,448],"organic-crystal-original":[960,448],"x-ray-cracking":[1024,448],"diamond-advanced":[1088,448],"crystal-silicon-advanced":[1152,448],"photon-combiner-advanced":[1216,448],"mass-energy-storage":[1280,448],"space-warper-advanced":[1344,448],"particle-container-advanced":[1408,448],"deuterium-fractionation":[0,512],"reforming-refine":[64,512],"iron-vein":[128,512],"copper-vein":[192,512],"silicium-vein":[256,512],"titanium-vein":[320,512],"stone-vein":[384,512],"coal-vein":[448,512],"crude-oil-seep":[512,512],"fire-ice-vein":[576,512],"kimberlite-vein":[640,512],"fractal-silicon-vein":[704,512],"organic-crystal-vein":[768,512],"optical-grating-crystal-vein":[832,512],"spiniform-stalagmite-crystal-vein":[896,512],"unipolar-magnet-vein":[960,512],"electromagnetism":[1024,512],"electromagnetic-matrix-technology":[1088,512],"high-efficiency-plasma-control":[1152,512],"plasma-extract-refining":[1216,512],"x-ray-cracking-technology":[1280,512],"reforming-refine-technology":[1344,512],"energy-matrix-technology":[1408,512],"hydrogen-fuel-rod-technology":[0,576],"thruster-technology":[64,576],"reinforced-thruster-technology":[128,576],"fluid-storage-encapsulation":[192,576],"basic-chemical-engineering":[256,576],"polymer-chemical-engineering":[320,576],"high-strength-crystal":[384,576],"structure-matrix-technology":[448,576],"casimir-crystal-technology":[512,576],"high-strength-glass":[576,576],"applied-superconductor":[640,576],"high-strength-material":[704,576],"particle-control-technology":[768,576],"deuterium-fractionation-technology":[832,576],"wave-function-interference":[896,576],"miniature-particle-collider-technology":[960,576],"strange-matter-technology":[1024,576],"artificial-star-technology":[1088,576],"controlled-annihilation-reaction":[1152,576],"proliferator-1-technology":[1216,576],"proliferator-2-technology":[1280,576],"proliferator-3-technology":[1344,576],"basic-assembling-processes":[1408,576],"high-speed-assembling-processes":[0,640],"quantum-printing-technology":[64,640],"processor-technology":[128,640],"quantum-chip-technology":[192,640],"photon-spotlight-mining-technology":[256,640],"mesoscopic-quantum-entanglement":[320,640],"semiconductor-material":[384,640],"information-matrix-technology":[448,640],"automatic-metallurgy":[512,640],"smelting-purification":[576,640],"crystal-smelting":[640,640],"steel-smelting":[704,640],"thermal-power":[768,640],"titanium-smelting":[832,640],"high-strength-titanium-alloy":[896,640],"environment-modification":[960,640],"mini-fusion-power-generation":[1024,640],"plane-filter-smelting-technology":[1088,640],"solar-collection":[1152,640],"photon-frequency-conversion":[1216,640],"solar-sail-orbit-system":[1280,640],"ray-receiver-technology":[1344,640],"planetary-ionosphere-utilization":[1408,640],"dirac-inversion-mechanism":[0,704],"universe-matrix-technology":[64,704],"mission-completed":[128,704],"energy-storage":[192,704],"interstellar-power-transmission":[256,704],"geothermal-extraction":[320,704],"high-strength-lightweight-structure":[384,704],"vertical-launching-silo-technology":[448,704],"dyson-sphere-stress-system-1":[512,704],"basic-logistics-system":[576,704],"improved-logistics-system":[640,704],"high-efficiency-logistics-system":[704,704],"planetary-logistics-system":[768,704],"interstellar-logistics-system":[832,704],"gas-giants-exploitation":[896,704],"integrated-logistics-system":[960,704],"distribution-logistics-system":[1024,704],"electromagnetic-drive":[1088,704],"magnetic-levitation-technology":[1152,704],"magnetic-particle-trap":[1216,704],"gravitational-wave-refraction":[1280,704],"gravity-matrix-technology":[1344,704],"super-magnetic-field-generator":[1408,704],"satellite-power-distribution-system":[0,768],"df-weapon-system":[64,768],"df-combustible-unit-tech":[128,768],"df-explosive-unit-tech":[192,768],"df-crystal-explosive-unit-tech":[256,768],"df-engine-tech":[320,768],"df-missile-turret-tech":[384,768],"df-implosion-cannon-tech":[448,768],"df-signal-tower-tech":[512,768],"df-planetary-defense-system":[576,768],"df-jammer-tower-tech":[640,768],"df-plasma-turret-tech":[704,768],"df-titanium-ammo-box-tech":[768,768],"df-superalloy-ammo-box-tech":[832,768],"df-high-explosive-shell-set-tech":[896,768],"df-supersonic-missile-set-tech":[960,768],"df-crystal-shell-set-tech":[1024,768],"df-gravity-missile-set-tech":[1088,768],"df-antimatter-capsule-tech":[1152,768],"df-prototype-tech":[1216,768],"df-precision-drone-tech":[1280,768],"df-attack-drone-tech":[1344,768],"df-corvette-tech":[1408,768],"df-destroyer-tech":[0,832],"df-suppressing-capsule-tech":[64,832],"df-battlefield-analysis-base-tech":[128,832],"df-digital-analog-computation":[192,832],"df-matter-recombination":[256,832],"df-negentropy-recursion":[320,832],"df-high-density-controlled-annihilation":[384,832],"mecha-core-1":[448,832],"mecha-core-2":[512,832],"mecha-core-3":[576,832],"mecha-core-4":[640,832],"mecha-core-5":[704,832],"mecha-core-6":[768,832],"mechanical-frame-1":[832,832],"mechanical-frame-2":[896,832],"mechanical-frame-3":[960,832],"mechanical-frame-4":[1024,832],"mechanical-frame-5":[1088,832],"mechanical-frame-6":[1152,832],"mechanical-frame-7":[1216,832],"mechanical-frame-8":[1280,832],"inventory-capacity-1":[1344,832],"inventory-capacity-2":[1408,832],"inventory-capacity-3":[0,896],"inventory-capacity-4":[64,896],"inventory-capacity-5":[128,896],"inventory-capacity-6":[192,896],"inventory-capacity-7":[256,896],"communication-control-1":[320,896],"communication-control-2":[384,896],"communication-control-3":[448,896],"communication-control-4":[512,896],"communication-control-5":[576,896],"communication-control-6":[640,896],"communication-control-7":[704,896],"energy-circuit-1":[768,896],"energy-circuit-2":[832,896],"energy-circuit-3":[896,896],"energy-circuit-4":[960,896],"energy-circuit-5":[1024,896],"energy-circuit-6":[1088,896],"drone-engine-1":[1152,896],"drone-engine-2":[1216,896],"drone-engine-3":[1280,896],"drone-engine-4":[1344,896],"drone-engine-5":[1408,896],"drone-engine-6":[0,960],"mass-construction-1":[64,960],"mass-construction-2":[128,960],"mass-construction-3":[192,960],"mass-construction-4":[256,960],"mass-construction-5":[320,960],"df-energy-shield-1":[384,960],"df-energy-shield-2":[448,960],"df-energy-shield-3":[512,960],"df-energy-shield-4":[576,960],"df-energy-shield-5":[640,960],"df-energy-shield-6":[704,960],"df-energy-shield-7":[768,960],"drive-engine-1":[832,960],"drive-engine-2":[896,960],"drive-engine-3":[960,960],"drive-engine-4":[1024,960],"drive-engine-5":[1088,960],"drive-engine-6":[1152,960],"df-auto-reconstruction-marking-1":[1216,960],"df-auto-reconstruction-marking-2":[1280,960],"df-auto-reconstruction-marking-3":[1344,960],"df-auto-reconstruction-marking-4":[1408,960],"df-auto-reconstruction-marking-5":[0,1024],"df-auto-reconstruction-marking-6":[64,1024],"solar-sail-life-1":[128,1024],"solar-sail-life-2":[192,1024],"solar-sail-life-3":[256,1024],"solar-sail-life-4":[320,1024],"solar-sail-life-5":[384,1024],"solar-sail-life-6":[448,1024],"ray-transmission-efficiency-1":[512,1024],"ray-transmission-efficiency-2":[576,1024],"ray-transmission-efficiency-3":[640,1024],"ray-transmission-efficiency-4":[704,1024],"ray-transmission-efficiency-5":[768,1024],"ray-transmission-efficiency-6":[832,1024],"ray-transmission-efficiency-7":[896,1024],"ray-transmission-efficiency-8":[960,1024],"sorter-cargo-stacking-1":[1024,1024],"sorter-cargo-stacking-2":[1088,1024],"sorter-cargo-stacking-3":[1152,1024],"sorter-cargo-stacking-4":[1216,1024],"sorter-cargo-stacking-5":[1280,1024],"sorter-cargo-integration":[1344,1024],"pile-sorter-1":[1408,1024],"pile-sorter-2":[0,1088],"pile-sorter-3":[64,1088],"pile-sorter-4":[128,1088],"pile-sorter-5":[192,1088],"pile-sorter-6":[256,1088],"distribution-range-1":[320,1088],"distribution-range-2":[384,1088],"distribution-range-3":[448,1088],"distribution-range-4":[512,1088],"distribution-range-5":[576,1088],"logistics-carrier-engine-1":[640,1088],"logistics-carrier-engine-2":[704,1088],"logistics-carrier-engine-3":[768,1088],"logistics-carrier-engine-4":[832,1088],"logistics-carrier-engine-5":[896,1088],"logistics-carrier-engine-6":[960,1088],"logistics-carrier-engine-7":[1024,1088],"logistics-carrier-capacity-1":[1088,1088],"logistics-carrier-capacity-2":[1152,1088],"logistics-carrier-capacity-3":[1216,1088],"logistics-carrier-capacity-4":[1280,1088],"logistics-carrier-capacity-5":[1344,1088],"logistics-carrier-capacity-6":[1408,1088],"logistics-carrier-capacity-7":[0,1152],"logistics-carrier-capacity-8":[64,1152],"logistics-carrier-capacity-9":[128,1152],"logistics-carrier-capacity-12":[192,1152],"logistics-station-integrated-logistics-1":[256,1152],"logistics-station-integrated-logistics-2":[320,1152],"logistics-station-integrated-logistics-3":[384,1152],"veins-utilization-1":[448,1152],"veins-utilization-2":[512,1152],"veins-utilization-3":[576,1152],"veins-utilization-4":[640,1152],"veins-utilization-5":[704,1152],"veins-utilization-6":[768,1152],"vertical-construction-1":[832,1152],"vertical-construction-2":[896,1152],"vertical-construction-3":[960,1152],"vertical-construction-4":[1024,1152],"vertical-construction-5":[1088,1152],"vertical-construction-6":[1152,1152],"research-speed-1":[1216,1152],"research-speed-2":[1280,1152],"research-speed-3":[1344,1152],"research-speed-4":[1408,1152],"universe-exploration-1":[0,1216],"universe-exploration-2":[64,1216],"universe-exploration-3":[128,1216],"universe-exploration-4":[192,1216],"df-kinetic-weapon-damage-1":[256,1216],"df-kinetic-weapon-damage-2":[320,1216],"df-kinetic-weapon-damage-3":[384,1216],"df-kinetic-weapon-damage-4":[448,1216],"df-kinetic-weapon-damage-5":[512,1216],"df-kinetic-weapon-damage-6":[576,1216],"df-energy-weapon-damage-1":[640,1216],"df-energy-weapon-damage-2":[704,1216],"df-energy-weapon-damage-3":[768,1216],"df-energy-weapon-damage-4":[832,1216],"df-energy-weapon-damage-5":[896,1216],"df-energy-weapon-damage-6":[960,1216],"df-explosive-weapon-damage-1":[1024,1216],"df-explosive-weapon-damage-2":[1088,1216],"df-explosive-weapon-damage-3":[1152,1216],"df-explosive-weapon-damage-4":[1216,1216],"df-explosive-weapon-damage-5":[1280,1216],"df-explosive-weapon-damage-6":[1344,1216],"df-combat-drone-damage-1":[1408,1216],"df-combat-drone-damage-2":[0,1280],"df-combat-drone-damage-3":[64,1280],"df-combat-drone-damage-4":[128,1280],"df-combat-drone-damage-5":[192,1280],"df-combat-drone-attack-speed-1":[256,1280],"df-combat-drone-attack-speed-2":[320,1280],"df-combat-drone-attack-speed-3":[384,1280],"df-combat-drone-attack-speed-4":[448,1280],"df-combat-drone-attack-speed-5":[512,1280],"df-combat-drone-durability-1":[576,1280],"df-combat-drone-durability-2":[640,1280],"df-combat-drone-durability-3":[704,1280],"df-combat-drone-durability-4":[768,1280],"df-combat-drone-durability-5":[832,1280],"df-planetary-shield-1":[896,1280],"df-planetary-shield-2":[960,1280],"df-planetary-shield-3":[1024,1280],"df-planetary-shield-4":[1088,1280],"df-planetary-shield-5":[1152,1280],"df-ground-squadron-expansion-1":[1216,1280],"df-ground-squadron-expansion-2":[1280,1280],"df-ground-squadron-expansion-3":[1344,1280],"df-ground-squadron-expansion-4":[1408,1280],"df-ground-squadron-expansion-5":[0,1344],"df-ground-squadron-expansion-6":[64,1344],"df-ground-squadron-expansion-7":[128,1344],"df-space-fleet-expansion-1":[192,1344],"df-space-fleet-expansion-2":[256,1344],"df-space-fleet-expansion-3":[320,1344],"df-space-fleet-expansion-4":[384,1344],"df-space-fleet-expansion-5":[448,1344],"df-space-fleet-expansion-6":[512,1344],"df-space-fleet-expansion-7":[576,1344],"df-enhanced-structure-1":[640,1344],"df-enhanced-structure-2":[704,1344],"df-enhanced-structure-3":[768,1344],"df-enhanced-structure-4":[832,1344],"df-enhanced-structure-5":[896,1344],"df-enhanced-structure-6":[960,1344],"df-em-weapon-strength-1":[1024,1344],"df-em-weapon-strength-2":[1088,1344],"df-em-weapon-strength-3":[1152,1344],"df-em-weapon-strength-4":[1216,1344],"df-em-weapon-strength-5":[1280,1344],"df-em-weapon-strength-6":[1344,1344],"buildings":[1408,1344],"components":[0,1408],"critical-photon-graviton":[64,1408],"module":[128,1408],"proliferator-1-products":[192,1408],"proliferator-1-speed":[256,1408],"proliferator-2-products":[320,1408],"proliferator-2-speed":[384,1408],"proliferator-3-products":[448,1408],"proliferator-3-speed":[512,1408]};
+const ICONW=1472,ICONH=1472;
+// Спрайт иконок: ЛОКАЛЬНАЯ копия (assets/icons.webp), снята с factoriolab@2fe1934c — не зависим от CDN, работает офлайн.
+// Если обновлять: перекачать спрайт с того же коммита factoriolab и обновить карту ICON выше (одна версия данных).
+const ICONURL='./assets/icons.webp';
+const BUILDREC={"assembling-machine-1":{"in":{"circuit-board":4,"gear":8,"iron-ingot":4}},"assembling-machine-2":{"in":{"assembling-machine-1":1,"graphene":8,"processor":4}},"assembling-machine-3":{"in":{"assembling-machine-2":1,"particle-broadband":8,"quantum-chip":2}},"arc-smelter":{"in":{"circuit-board":4,"iron-ingot":4,"magnetic-coil":2,"stone-brick":2}},"plane-smelter":{"in":{"arc-smelter":1,"frame-material":5,"plane-filter":4,"unipolar-magnet":15}},"chemical-plant":{"in":{"circuit-board":2,"glass":8,"steel":8,"stone-brick":8}},"quantum-chemical-plant":{"in":{"chemical-plant":1,"quantum-chip":3,"strange-matter":3,"titanium-glass":10}},"oil-refinery":{"in":{"circuit-board":6,"plasma-exciter":6,"steel":10,"stone-brick":10}},"matrix-lab":{"in":{"circuit-board":4,"glass":4,"iron-ingot":8,"magnetic-coil":4}},"miniature-particle-collider":{"in":{"frame-material":20,"graphene":10,"processor":8,"super-magnetic-ring":25,"titanium-alloy":20}},"fractionator":{"in":{"glass":4,"processor":1,"steel":8,"stone-brick":4}}};
+function iconSVG(id,x,y,s){const p=ICON[id];if(!p)return '';
+  return `<svg x="${x}" y="${y}" width="${s}" height="${s}" viewBox="${p[0]} ${p[1]} 64 64"><image href="${ICONURL}" width="${ICONW}" height="${ICONH}"></image></svg>`;}
+
+// дефолтный импорт + включённые альт-рецепты (recipe id)
+// пресет «лейт-гейм»: альты на редких рудах (kimberlite/fractal/fire-ice/grating/stalagmite/unipolar). Нефть НЕ трогаем.
+const PRESETS={late:['diamond-advanced','crystal-silicon-advanced','graphene-advanced','carbon-nanotube-advanced','photon-combiner-advanced','casimir-crystal-advanced','particle-container-advanced'],base:[]};
+// импорт по пресету: в лейте графен/нанотрубки/серную кислоту тянем готовыми (обрезаем эти под-цепочки)
+const PRESET_IMPORTS={late:[
+  'carbon-nanotube','graphene','sulfuric-acid','energetic-graphite','organic-crystal','diamond',
+  // сырые руды/ресурсы — завозим на планету, а не добываем
+  'iron-ore','copper-ore','silicon-ore','titanium-ore','stone','coal','water','crude-oil',
+  'kimberlite-ore','fractal-silicon','optical-grating-crystal','spiniform-stalagmite-crystal','unipolar-magnet','fire-ice'
+],base:[]};
+let imported=new Set(PRESET_IMPORTS.late);
+let enabledAlts=new Set(PRESETS.late);
+// сырьё, которое МОЖНО добывать на планете (есть оценка добытчиков). Остальной raw без рецепта (напр. antimatter) — только завозить.
+const RAWX={'iron-ore':[30,'u_vein'],'copper-ore':[30,'u_vein'],'silicon-ore':[30,'u_vein'],'titanium-ore':[30,'u_vein'],
+  'coal':[30,'u_vein'],'stone':[30,'u_vein'],'kimberlite-ore':[30,'u_vein'],'fractal-silicon':[30,'u_vein'],
+  'crude-oil':[60,'u_pumpjack'],'water':[50,'u_pump'],'hydrogen':[null,'u_gas'],'deuterium':[null,'u_frac'],'fire-ice':[null,'u_gas']};
+
+// ---------- I18N (ru / en / zh) — переводится chrome UI; названия предметов остаются англ. ----------
+let lang='ru';
+const I18N={
+ ru:{title:'DSP — крафты: расчёт + раскладка',search:'искать крафт…',target:'Цель',perMin:'шт/мин',presetAlts:'Пресет альтов',preset_late:'лейт-гейм ⛏ редкие руды',preset_base:'базовый (без альтов)',view_hub:'▦ Вид: хабы',view_belt:'≋ Вид: ленты',fit:'Вписать',
+  settings:'Настройки',assembler:'Сборщик',smelter:'Плавильня',smt_arc:'Дуговая',smt_plane:'Плоскостная',proliferator:'Пролифератор',pf_none:'нет',belt:'Лента',fuse:'объединять цепочки',shape:'Форма',sh_belt:'компактно',sh_sq:'квадрат',sh_w2:'узкий ×2',sh_row:'ряд',sh_col:'колонка',station:'Станция',builds:'Постройки (всего)',mining:'Добыча (оценка)',alts:'Альт-рецепты',alts_note:'Напр. «Refined Oil ← reforming-refine»: −33% сырой нефти ценой угля + утилизация водорода-побочки.',imports_h:'Считать как импорт',imports_note:'Сними галку — и узел раскроется в полную цепочку.',
+  hint:'Колёсико — зум · перетаскивание — панорама · сверху вниз = поток материала · клетки = реальный след построек',
+  impnote:'Импорт на планету',st_ils:'МЛС',st_pls:'ПЛС',st_ils_opt:'МЛС · 5',st_pls_opt:'ПЛС · 4',inw:'вход',outw:'выход',stationWord:'Станция',craft:'крафт.',perbelt:'лента',belt_imp:'импорт',belt_mine:'добыча',
+  b_asm:'Сборщик',b_smt:'Плавильня',b_che:'Хим. завод',b_ref:'НПЗ',b_lab:'Матрица-лаб',b_col:'Коллайдер',b_fra:'Фракционатор',
+  u_vein:'жил',u_pumpjack:'качалок',u_pump:'насосов',u_gas:'газ-гигант',u_frac:'фракц.',
+  footer_disc:'Неофициальный фан-инструмент, не связан с разработчиками.',per:'/м',mining_none:'— нет добываемого сырья —',footer_credit:'Иконки и данные —',share:'Ссылка',copied:'Скопировано ✓',
+  leg_intro:'наведи на модуль — подсветит связи',leg_imp:'голубой — импорт (пунктир — сырьё)',leg_exp:'жёлтый — экспорт',leg_belt:'лента вниз · «N зд/лента»',leg_craft:'шапка: оранж — выход, синий — вход',leg_badge:'бейдж {ST} — вход+выход/слоты',leg_final:'жёлтый контур — финал',leg_over:'красный — не влезает'},
+ en:{title:'DSP — crafting calc & layout',search:'search recipe…',target:'Target',perMin:'per min',presetAlts:'Alt preset',preset_late:'late game ⛏ rare ores',preset_base:'basic (no alts)',view_hub:'▦ View: hubs',view_belt:'≋ View: belts',fit:'Fit',
+  settings:'Settings',assembler:'Assembler',smelter:'Smelter',smt_arc:'Arc',smt_plane:'Plane',proliferator:'Proliferator',pf_none:'none',belt:'Belt',fuse:'merge chains',shape:'Shape',sh_belt:'compact',sh_sq:'square',sh_w2:'narrow ×2',sh_row:'row',sh_col:'column',station:'Station',builds:'Buildings (total)',mining:'Mining (est.)',alts:'Alt recipes',alts_note:'E.g. “Refined Oil ← reforming-refine”: −33% crude oil at the cost of coal + reuses byproduct hydrogen.',imports_h:'Count as import',imports_note:'Uncheck to expand the node into its full chain.',
+  hint:'Wheel — zoom · drag — pan · top→down = material flow · cells = real building footprint',
+  impnote:'Imported to planet',st_ils:'ILS',st_pls:'PLS',st_ils_opt:'ILS · 5',st_pls_opt:'PLS · 4',inw:'in',outw:'out',stationWord:'Station',craft:'craft',perbelt:'belt',belt_imp:'import',belt_mine:'mine',
+  b_asm:'Assembler',b_smt:'Smelter',b_che:'Chem plant',b_ref:'Refinery',b_lab:'Matrix lab',b_col:'Collider',b_fra:'Fractionator',
+  u_vein:'veins',u_pumpjack:'pumps',u_pump:'pumps',u_gas:'gas giant',u_frac:'fract.',
+  footer_disc:'Unofficial fan tool, not affiliated with the developers.',per:'/min',mining_none:'— nothing to mine —',footer_credit:'Icons & data —',share:'Link',copied:'Copied ✓',
+  leg_intro:'hover a module to highlight links',leg_imp:'blue — import (dashed — raw ore)',leg_exp:'yellow — export',leg_belt:'belt down · “N bld/belt”',leg_craft:'header: orange — output, blue — input',leg_badge:'{ST} badge — in+out/slots',leg_final:'yellow outline — final',leg_over:'red — doesn’t fit'},
+ zh:{title:'DSP — 配方计算与布局',search:'搜索配方…',target:'目标',perMin:'个/分',presetAlts:'配方预设',preset_late:'后期 ⛏ 稀有矿',preset_base:'基础（无替代）',view_hub:'▦ 视图：枢纽',view_belt:'≋ 视图：传送带',fit:'适应',
+  settings:'设置',assembler:'制造台',smelter:'熔炉',smt_arc:'电弧',smt_plane:'位面',proliferator:'增产剂',pf_none:'无',belt:'传送带',fuse:'合并链路',shape:'形状',sh_belt:'紧凑',sh_sq:'方形',sh_w2:'窄 ×2',sh_row:'行',sh_col:'列',station:'物流塔',builds:'建筑（总计）',mining:'开采（估算）',alts:'替代配方',alts_note:'例如「Refined Oil ← reforming-refine」：以煤为代价减少 33% 原油 + 利用副产氢。',imports_h:'视为进口',imports_note:'取消勾选即可将节点展开为完整链路。',
+  hint:'滚轮缩放 · 拖动平移 · 自上而下＝物料流向 · 格子＝真实建筑占地',
+  impnote:'行星进口',st_ils:'星际站',st_pls:'行星站',st_ils_opt:'星际站 · 5',st_pls_opt:'行星站 · 4',inw:'进',outw:'出',stationWord:'物流塔',craft:'配方',perbelt:'带',belt_imp:'进口',belt_mine:'开采',
+  b_asm:'制造台',b_smt:'熔炉',b_che:'化工厂',b_ref:'精炼厂',b_lab:'研究站',b_col:'对撞机',b_fra:'分馏塔',
+  u_vein:'矿脉',u_pumpjack:'抽油机',u_pump:'水泵',u_gas:'气巨星',u_frac:'分馏',
+  footer_disc:'非官方爱好者工具，与开发者无关。',per:'/分',mining_none:'— 无可开采 —',footer_credit:'图标与数据 —',share:'链接',copied:'已复制 ✓',
+  leg_intro:'悬停模块高亮关联',leg_imp:'蓝色＝进口（虚线＝原矿）',leg_exp:'黄色＝出口',leg_belt:'传送带向下 ·「N 座/带」',leg_craft:'配方头：橙＝产出，蓝＝投入',leg_badge:'{ST} 徽章＝进+出/槽位',leg_final:'黄框＝最终产物',leg_over:'红色＝放不下'}
+};
+function t(k){const d=I18N[lang]||I18N.ru;return (d[k]!=null?d[k]:(I18N.ru[k]!=null?I18N.ru[k]:k));}
+function applyLang(){
+  document.documentElement.lang=lang;
+  setTitle();
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.getAttribute('data-i18n'));});
+  const tg=$('target');if(tg){tg.placeholder=t('search');tg.value=nm(targetId);}
+  const ls=$('lang');if(ls)ls.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.l===lang));
+  craftable.sort((a,b)=>nm(a).localeCompare(nm(b),lang));
+}
+
+const $=id=>document.getElementById(id);
+function nm(id){const L=NAMELOC[lang];return (L&&L[id])||NAME[id]||id;}
+// китайские названия предметов (встроено, items из i18n FactorioLab). ru/en — базовый NAME (англ.).
+const NAME_ZH={"annihilation-constraint-sphere":"湮灭约束球","antimatter":"反物质","antimatter-fuel-rod":"反物质燃料棒","carbon-nanotube":"碳纳米管","casimir-crystal":"卡西米尔晶体","circuit-board":"电路板","coal":"煤矿","copper-ingot":"铜块","copper-ore":"铜矿","critical-photon":"临界光子","crude-oil":"原油","crystal-silicon":"晶格硅","deuterium":"重氢","deuteron-fuel-rod":"氘核燃料棒","df-antimatter-capsule":"反物质胶囊","df-attack-drone":"攻击无人机","df-combustible-unit":"燃烧单元","df-core-element":"核心素","df-corvette":"护卫舰","df-crystal-explosive-unit":"晶石爆破单元","df-crystal-shell-set":"晶石炮弹组","df-destroyer":"驱逐舰","df-engine":"动力引擎","df-explosive-unit":"爆破单元","df-gravity-missile-set":"引力导弹组","df-high-explosive-shell-set":"高爆炮弹组","df-missile-set":"导弹组","df-plasma-capsule":"等离子胶囊","df-precision-drone":"精准无人机","df-prototype":"原型机","df-shell-set":"炮弹组","df-strange-annihilation-fuel-rod":"奇异湮灭燃料棒","df-superalloy-ammo-box":"超合金弹箱","df-supersonic-missile-set":"超音速导弹组","df-titanium-ammo-box":"钛化弹箱","diamond":"金刚石","dyson-sphere-component":"戴森球组件","electric-motor":"电动机","electromagnetic-matrix":"电磁矩阵","electromagnetic-turbine":"电磁涡轮","energetic-graphite":"高能石墨","energy-matrix":"能量矩阵","fire-ice":"可燃冰","foundation":"地基","fractal-silicon":"分形硅石","frame-material":"框架材料","gear":"齿轮","glass":"玻璃","graphene":"石墨烯","graviton-lens":"引力透镜","gravity-matrix":"引力矩阵","high-purity-silicon":"高纯硅块","hydrogen":"氢","hydrogen-fuel-rod":"液氢燃料棒","information-matrix":"信息矩阵","iron-ingot":"铁块","iron-ore":"铁矿","kimberlite-ore":"金伯利矿石","log":"木材","logistics-bot":"配送运输机","logistics-drone":"物流运输机","logistics-vessel":"星际物流运输船","magnet":"磁铁","magnetic-coil":"磁线圈","microcrystalline-component":"微晶原件","optical-grating-crystal":"光栅石","organic-crystal":"有机晶体","particle-broadband":"粒子宽带","particle-container":"粒子容器","photon-combiner":"光子合并器","plane-filter":"位面过滤器","plant-fuel":"植物燃料","plasma-exciter":"电浆激发器","plastic":"塑料","prism":"棱镜","processor":"处理器","proliferator-1":"增产剂 Mk.I","proliferator-2":"增产剂 Mk.II","proliferator-3":"增产剂 Mk.III","quantum-chip":"量子芯片","refined-oil":"精炼油","reinforced-thruster":"加力推进器","silicon-ore":"硅石","small-carrier-rocket":"小型运载火箭","solar-sail":"太阳帆","space-warper":"空间翘曲器","spiniform-stalagmite-crystal":"刺笋结晶","steel":"钢","stone":"石矿","stone-brick":"石材","strange-matter":"奇异物质","structure-matrix":"结构矩阵","sulfuric-acid":"硫酸","super-magnetic-ring":"超级磁场环","thruster":"推进器","titanium-alloy":"钛合金","titanium-crystal":"钛晶石","titanium-glass":"钛化玻璃","titanium-ingot":"钛块","titanium-ore":"钛石","unipolar-magnet":"单极磁石","universe-matrix":"宇宙矩阵","water":"水"};
+const NAMELOC={zh:NAME_ZH};
+function loadLoc(){return Promise.resolve();} // данные встроены — асинхронной загрузки нет
+function primaryOut(rid){const o=REC[rid].out;return Object.keys(o).reduce((a,b)=>o[b]>o[a]?b:a);}
+// id постройки по классу+тиру (для сметы на стройку)
+function buildingId(cls){
+  if(cls==='asm'){const v=+($('asm')?.value||1);return v<1?'assembling-machine-1':v>1?'assembling-machine-3':'assembling-machine-2';}
+  if(cls==='smt')return (+($('smt')?.value||1))>1?'plane-smelter':'arc-smelter';
+  return {che:'chemical-plant',ref:'oil-refinery',lab:'matrix-lab',col:'miniature-particle-collider',fra:'fractionator'}[cls]||'assembling-machine-1';
+}
+// рецепт предмета/постройки (для разворота в сырьё)
+function recipeOfItem(item){
+  if(BUILDREC[item])return {in:BUILDREC[item].in,out:{[item]:1}};
+  const rid=PREF[item];return rid?REC[rid]:null;
+}
+// разворот количества в сырьё (рекурсивно, разово — для сметы)
+function rawCost(item,qty,acc,depth){
+  if(depth>40)return; const r=recipeOfItem(item);
+  if(!r){acc[item]=(acc[item]||0)+qty;return;}
+  const per=r.out[item]||1, crafts=qty/per;
+  for(const k in r.in)rawCost(k,crafts*r.in[k],acc,(depth||0)+1);
+}
+
+// поле цели: свой выпадающий список с поиском (надёжнее нативного datalist)
+const tsel=$('target');
+let targetId='structure-matrix';
+const craftable=Object.keys(PREF).sort((a,b)=>nm(a).localeCompare(nm(b),'ru'));
+const dl=$('targetlist');
+function renderList(filter){
+  const f=(filter||'').trim().toLowerCase();
+  const items=craftable.filter(id=>nm(id).toLowerCase().includes(f));
+  dl.innerHTML=items.length?items.map(id=>`<div class="opt${id===targetId?' active':''}" data-id="${id}">${nm(id)}</div>`).join('')
+    :'<div class="opt dim">— нет совпадений —</div>';
+  dl.querySelectorAll('.opt[data-id]').forEach(o=>o.onmousedown=e=>{e.preventDefault();selectTarget(o.dataset.id);});
+}
+function selectTarget(id){targetId=id;tsel.value=nm(id);dl.classList.remove('open');tsel.blur();run();}
+tsel.addEventListener('focus',()=>{renderList(tsel.value===nm(targetId)?'':tsel.value);dl.classList.add('open');});
+tsel.addEventListener('input',()=>{renderList(tsel.value);dl.classList.add('open');});
+tsel.addEventListener('blur',()=>setTimeout(()=>dl.classList.remove('open'),160));
+tsel.addEventListener('keydown',e=>{if(e.key==='Enter'){const first=dl.querySelector('.opt[data-id]');if(first)selectTarget(first.dataset.id);}
+  else if(e.key==='Escape'){dl.classList.remove('open');tsel.blur();}});
+tsel.value=nm(targetId);
+
+// ---------- РАСЧЁТ: линейный солвер по скоростям рецептов ----------
+function compute(){
+  const target=targetId, rate=parseFloat($('rate').value)||0;
+  const aSpd=parseFloat($('asm').value), sSpd=parseFloat($('smt').value), pf=parseFloat($('pf').value);
+  // пролификатор (+% продукта) применяется ко ВСЕМ рецептам, КРОМЕ финального целевого:
+  // целевой делаем ровно под rate — его сборку бонусом не «разгоняем», иначе всё дерево занижается на ~25%
+  const pfOf=rid=>(primaryOut(rid)===target?1:pf);
+  const spd=b=>({asm:aSpd,smt:sSpd})[b]||1;
+  const imp=new Set(imported);imp.delete(target); // цель не может быть импортом
+  // --- включённые альты: замена (override) vs надстройка (extra) ---
+  // рецепт, потребляющий свой же выход (петля-усилитель, напр. reforming) → сосуществует;
+  // иначе (diamond-advanced и т.п.) → замещает основной рецепт, иначе система переопределена
+  const override={}, extra=new Set();
+  enabledAlts.forEach(rid=>{if(!REC[rid])return;const o=primaryOut(rid);
+    if(REC[rid].in[o]!=null)extra.add(rid); else override[o]=rid;});
+  const recipeOf=it=>imp.has(it)?null:(override[it]||PREF[it]);
+  // --- активный набор рецептов ---
+  const active=new Set(), needed=new Set([target]), stack=[target];
+  const addRec=rid=>{if(!REC[rid]||active.has(rid))return;active.add(rid);
+    for(const k in REC[rid].in){if(!needed.has(k)){needed.add(k);stack.push(k);}}};
+  const drain=()=>{while(stack.length){const it=stack.pop();const rid=recipeOf(it);if(rid)addRec(rid);}};
+  drain();
+  let grew=true;
+  while(grew){grew=false;
+    extra.forEach(rid=>{if(!active.has(rid)&&Object.keys(REC[rid].out).some(o=>needed.has(o))){addRec(rid);grew=true;}});
+    if(stack.length){drain();grew=true;}
+  }
+  const A=[...active];
+  // --- балансируемые предметы ---
+  // база: первичные выходы активных рецептов (то, ради чего рецепт включён) ∪ {target}, без импорта.
+  // Побочки (напр. водород из плазмы) по умолчанию НЕ балансируются (идут в сырьё/вентиль).
+  const prod=new Set(),cons=new Set();
+  A.forEach(rid=>{for(const o in REC[rid].out)prod.add(o);for(const i in REC[rid].in)cons.add(i);});
+  const P=new Set(A.map(primaryOut));
+  const balanced=[...new Set([...P].filter(it=>cons.has(it)).concat([target]))].filter(it=>!imp.has(it));
+  // если рецептов больше, чем строк (надстройки вроде reforming делят первичный выход) —
+  // повышаем побочки до балансируемых, пока система не станет квадратной
+  const extraBy=[...prod].filter(it=>cons.has(it)&&!P.has(it)&&!imp.has(it)&&!balanced.includes(it));
+  while(A.length>balanced.length&&extraBy.length)balanced.push(extraBy.shift());
+  const n=A.length,m=balanced.length;
+  if(n!==m) return {error:`Система не квадратная: ${m} балансируемых предметов / ${n} рецептов. Несовместимый набор рецептов — отключи лишний альт.`,nodes:{},rawTot:{},target};
+  // --- M·x=b, выход домножен на пролифератор (extra products: больше выход, вход тот же) ---
+  const aug=balanced.map((it,i)=>[...A.map(rid=>((REC[rid].out[it]||0)*pfOf(rid)-(REC[rid].in[it]||0))), it===target?rate:0]);
+  for(let c=0;c<n;c++){
+    let p=c;for(let r=c+1;r<n;r++)if(Math.abs(aug[r][c])>Math.abs(aug[p][c]))p=r;
+    if(Math.abs(aug[p][c])<1e-9)return {error:'Вырожденная матрица рецептов',nodes:{},rawTot:{},target};
+    [aug[c],aug[p]]=[aug[p],aug[c]];
+    for(let r=0;r<n;r++){if(r===c)continue;const f=aug[r][c]/aug[c][c];for(let k=c;k<=n;k++)aug[r][k]-=f*aug[c][k];}
+  }
+  const x={};A.forEach((rid,i)=>x[rid]=aug[i][n]/aug[i][i]);
+  const neg=A.filter(rid=>x[rid]<-1e-6);
+  if(neg.length)return {error:`Невозможная конфигурация (отрицательные скорости: ${neg.map(r=>nm(primaryOut(r))).join(', ')})`,nodes:{},rawTot:{},target};
+  // --- производители каждого предмета (для развязки рёбер) ---
+  const producersOf={};
+  A.forEach(rid=>{for(const o in REC[rid].out)(producersOf[o]=producersOf[o]||[]).push({rid,made:x[rid]*REC[rid].out[o]*pfOf(rid)});});
+  const isRawItem=k=>imp.has(k)||!(producersOf[k]&&producersOf[k].length);
+  // --- узлы по recipe-id ---
+  const nodes={},rawTot={};
+  A.forEach(rid=>{
+    const r=REC[rid],cr=x[rid],oItem=primaryOut(rid);
+    const alt=rid!==PREF[oItem];
+    const tag=alt?(rid.split('-').filter(w=>!oItem.split('-').includes(w)).join('-')||rid):'';
+    nodes[rid]={id:rid,out:oItem,alt,tag,dem:cr*r.out[oItem]*pfOf(rid),craftsMin:cr,bld:cr/(60*spd(r.b)/r.t),b:r.b,tier:0,inEdges:[]};
+    for(const k in r.in){
+      const flow=cr*r.in[k];
+      if(isRawItem(k)){rawTot[k]=(rawTot[k]||0)+flow;nodes[rid].inEdges.push({from:k,item:k,flow,raw:true});}
+      else{const ps=producersOf[k],tot=ps.reduce((s,p)=>s+p.made,0)||1;
+        ps.forEach(p=>{if(p.rid===rid)return;nodes[rid].inEdges.push({from:p.rid,item:k,flow:flow*p.made/tot});});}
+    }
+  });
+  // --- tier (продюсер→потребитель), с защитой от петель ---
+  const tm={};
+  const tierOf=rid=>{if(tm[rid]!=null)return tm[rid];tm[rid]=0;let mx=0;
+    nodes[rid].inEdges.forEach(e=>{if(!e.raw&&nodes[e.from])mx=Math.max(mx,tierOf(e.from)+1);});return tm[rid]=mx;};
+  A.forEach(rid=>nodes[rid].tier=tierOf(rid)+1);
+  return {nodes,rawTot,target,producersOf};
+}
+
+// ---------- ПАНЕЛЬ ----------
+function fmt(x){return x>=100?Math.round(x):x>=10?x.toFixed(1):x.toFixed(2);}
+function renderPanels(res){
+  const raws=$('raws');
+  if(res.error){raws.innerHTML=`<div class="warn" style="color:#ff8f6b">⚠ ${res.error}</div>`;
+    $('builds').innerHTML='';$('area').innerHTML='';$('belts2').innerHTML='';$('mining').innerHTML='';$('prolif').innerHTML='';$('buildcost').innerHTML='';$('impnote').style.display='none';renderImports(res);renderAlts(res);return;}
+  raws.innerHTML=''; // #raws оставлен только под ошибки; список сырья теперь в сноске «Импорт · ILS»
+  // сноска поверх раскладки: что завозим на планету через ILS (предметы, помеченные импортом)
+  // показываем всё raw-сырьё, что нельзя добыть локально (imported ИЛИ не-добываемое, напр. antimatter — иначе вход «проглатывался»)
+  const inote=$('impnote'), imps=Object.entries(res.rawTot).filter(([k])=>imported.has(k)||!RAWX[k]).sort((a,b)=>b[1]-a[1]);
+  if(!imps.length){inote.style.display='none';inote.innerHTML='';}
+  else{inote.style.display='';
+    inote.innerHTML=`<div class="t">⇲ ${t('impnote')} · ${t('st_ils')} (${imps.length})</div>`+
+      imps.map(([k,v])=>{const noRec=!PREF[k]&&!imported.has(k);                 // нет рецепта и не помечено импортом → завозить извне
+        return `<div class="r"${noRec?' title="'+nm(k)+' — нет рецепта, завозится извне"':''}>${iconSVG(k,0,0,15)}<span>${nm(k)}${noRec?' <span style="color:#8a98b8">·raw</span>':''}</span><b>${fmt(v)}${t('per')}</b></div>`;}).join('');}
+  // постройки
+  const bd={};Object.values(res.nodes).forEach(n=>{bd[n.b]=(bd[n.b]||0)+Math.ceil(n.bld);});
+  const bb=$('builds');bb.innerHTML='';
+  Object.entries(bd).forEach(([b,c])=>bb.insertAdjacentHTML('beforeend',
+    `<div class="row"><span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;background:${(SIZE[b]||SIZE.asm).c}"></i>${t('b_'+b)}</span><span class="v">${c}</span></div>`));
+  // площадь (тайлы)
+  let bcells=0;
+  Object.values(res.nodes).forEach(n=>{const c=Math.ceil(n.bld);const fp=footprint(n.b,c);bcells+=c*fp.s.w*fp.s.h;});
+  $('area').innerHTML=`<div class="row"><span>Клетки построек</span><span class="v">${bcells} т.</span></div>`;
+  // пиковая лента: самый нагруженный одиночный поток (выход блока или вход)
+  let peak=0,peakIt='';
+  Object.values(res.nodes).forEach(n=>{if(n.dem>peak){peak=n.dem;peakIt=n.out;}
+    n.inEdges.forEach(e=>{if(e.flow>peak){peak=e.flow;peakIt=e.item;}});});
+  const belt=parseFloat($('belt').value);
+  const tiers=[[360,'Mk.I'],[720,'Mk.II'],[1800,'Mk.III']];
+  const minT=tiers.find(t=>t[0]>=peak), lanes=Math.ceil(peak/belt), beltNm=$('belt').selectedOptions[0].textContent.split(' ')[0];
+  $('belts2').innerHTML=
+    `<div class="row"><span>Пиковый поток</span><span class="v">${fmt(peak)}/м<span style="color:#8a98b8"> · ${nm(peakIt)}</span></span></div>`+
+    `<div class="row"><span>Хватит 1 ленты</span><span class="v">${minT?minT[1]:'>Mk.III'}</span></div>`+
+    `<div class="row"><span>На текущей (${beltNm})</span><span class="v" style="${lanes>1?'color:#ff8f6b':''}">${lanes}× лент</span></div>`;
+  // --- ДОБЫЧА (оценка): сырьё/мин → добытчики/жилы --- (RAWX поднят в модульную область)
+  const mn=$('mining');mn.innerHTML='';
+  Object.entries(res.rawTot).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+    const x=RAWX[k]; if(!x||imported.has(k))return; // импортируемое не добываем
+    const txt=x[0]?`≈ ${Math.ceil(v/x[0])} ${t(x[1])}`:t(x[1]);
+    mn.insertAdjacentHTML('beforeend',`<div class="row"><span>${nm(k)}</span><span class="v">${txt}</span></div>`);
+  });
+  if(!mn.innerHTML)mn.innerHTML='<div class="row"><span style="color:#8a98b8">'+t('mining_none')+'</span></div>';
+  // --- ПРОЛИФЕРАТОР (если прыскать всё) — счёт уже учитывает бонус на промежутках (кроме финала) ---
+  const pr=$('prolif');const pf=parseFloat($('pf').value);
+  const PINFO={'1.125':[12,'proliferator-1'],'1.2':[24,'proliferator-2'],'1.25':[60,'proliferator-3']};
+  const pinf=PINFO[$('pf').value];
+  if(pf<=1||!pinf){pr.innerHTML='<div class="row"><span style="color:#8a98b8">выключен (поток без потерь)</span></div>';}
+  else{
+    let sprayed=0;Object.values(res.nodes).forEach(n=>n.inEdges.forEach(e=>sprayed+=e.flow));
+    const units=sprayed/pinf[0];const pacc={};rawCost(pinf[1],units,pacc,0);
+    pr.innerHTML=`<div class="row"><span>Брызгается</span><span class="v">${fmt(sprayed)}/мин</span></div>`+
+      `<div class="row"><span>${nm(pinf[1])}</span><span class="v">${fmt(units)}/мин</span></div>`+
+      Object.entries(pacc).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`<div class="row"><span>↳ ${nm(k)}</span><span class="v">${fmt(v)}/мин</span></div>`).join('');
+  }
+  // --- СМЕТА НА СТРОЙКУ ---
+  // сортеры (точно): на каждую постройку = число входов + выходов её рецепта
+  let sorters=0, beltsN=0;
+  Object.values(res.nodes).forEach(n=>{const r=REC[n.id];const io=Object.keys(r.in).length+Object.keys(r.out).length;
+    sorters+=Math.ceil(n.bld)*io;
+    n.inEdges.forEach(e=>beltsN+=Math.ceil(e.flow/belt)); beltsN+=Math.ceil(n.dem/belt);}); // ленты (≈): входы+выход
+  const nBuild=Object.values(bd).reduce((s,c)=>s+c,0);
+  // материалы на постройки (разово, в сырьё)
+  const cacc={};
+  Object.entries(bd).forEach(([cls,cnt])=>rawCost(buildingId(cls),cnt,cacc,0));
+  const bc=$('buildcost');
+  bc.innerHTML=
+    `<div class="row"><span>Зданий</span><span class="v">${nBuild}</span></div>`+
+    `<div class="row"><span>Сортеры (точно)</span><span class="v">${sorters}</span></div>`+
+    `<div class="row"><span>Ленты (≈)</span><span class="v">≈ ${beltsN}</span></div>`+
+    `<div class="row" style="border:0;padding-top:6px;color:#8a98b8;font-size:11px">материалы на постройки:</div>`+
+    Object.entries(cacc).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+      `<div class="row"><span>${nm(k)}</span><span class="v">${Math.ceil(v)}</span></div>`).join('');
+  renderImports(res);renderAlts(res);
+}
+function chainItems(res){const s=new Set();Object.values(res.nodes||{}).forEach(n=>{s.add(n.out);n.inEdges.forEach(e=>s.add(e.item));});return s;}
+function renderImports(res){
+  const cand=new Set([...chainItems(res)].filter(id=>PREF[id]));
+  imported.forEach(i=>cand.add(i)); cand.delete(res.target);
+  const ib=$('imports');ib.innerHTML='';
+  [...cand].sort((a,b)=>nm(a).localeCompare(nm(b),'ru')).forEach(id=>{
+    ib.insertAdjacentHTML('beforeend',
+      `<label class="imp"><input type="checkbox" data-id="${id}" ${imported.has(id)?'checked':''}>${nm(id)}</label>`);
+  });
+  ib.querySelectorAll('input').forEach(c=>c.onchange=()=>{
+    c.checked?imported.add(c.dataset.id):imported.delete(c.dataset.id);run();});
+}
+function renderAlts(res){
+  const rel=chainItems(res);
+  const ab=$('alts');if(!ab)return;ab.innerHTML='';
+  ALTS.filter(a=>rel.has(a.out)||enabledAlts.has(a.id)).forEach(a=>{
+    ab.insertAdjacentHTML('beforeend',
+      `<label class="imp"><input type="checkbox" data-alt="${a.id}" ${enabledAlts.has(a.id)?'checked':''}>${nm(a.out)} <span style="color:#8a98b8">← ${a.id}</span></label>`);
+  });
+  ab.querySelectorAll('input').forEach(c=>c.onchange=()=>{
+    c.checked?enabledAlts.add(c.dataset.alt):enabledAlts.delete(c.dataset.alt);run();});
+}
+
+// ---------- РАСКЛАДКА (SVG) — единая клеточная доска ----------
+const TS=9;            // px на 1 тайл
+const GAPB=1;          // зазор в тайлах между постройками (под ленты)
+// всё ниже — в ТАЙЛАХ (общая координатная сетка всего завода)
+const RB=1;            // боковая/нижняя рамка комнаты
+const RHEAD=3;         // шапка комнаты под подпись (~24px)
+const GX=4;            // зазор между комнатами в ярусе
+const GY=6;            // коридор между ярусами (под горизонтальные ленты)
+const BM=2;            // поле доски
+const SRCWT=12,SRCHT=4;// размер комнаты-источника
+// реальные следы построек DSP (тайлы) + цвет
+const SIZE={
+  asm:{w:3,h:3,c:'#3d6fb0',n:'Сборщик'},
+  smt:{w:3,h:3,c:'#b07a3d',n:'Плавильня'},
+  che:{w:3,h:2,c:'#3da06b',n:'Хим. завод'},
+  ref:{w:3,h:3,c:'#2f9c9c',n:'НПЗ'},
+  lab:{w:3,h:3,c:'#8a6bd0',n:'Матрица-лаб'},
+  fra:{w:3,h:3,c:'#c06bb0',n:'Фракционатор'},
+  col:{w:5,h:5,c:'#8a4fb0',n:'Коллайдер'},
+};
+// иконка постройки на клетку: берём из buildingId(cls) — учитывает тир
+// (Mk.I/II/III сборщик, дуговая/плоскостная плавильня), а не всегда тир-1
+// раскладка N построек прямоугольником, ~квадратной формы
+function footprint(b,count,rowsHint){
+  const s=SIZE[b]||SIZE.asm;
+  const mode=($('shape')&&$('shape').value)||'belt';
+  let cols,rows;
+  if(mode==='belt'){
+    // компактно, с биасом вертикально (постройки стопкой); НЕ привязано к числу лент
+    cols=Math.max(1,Math.floor(Math.sqrt(count)));
+    rows=Math.ceil(count/cols);
+  }
+  else{
+    if(mode==='row')cols=count;
+    else if(mode==='col')cols=1;
+    else if(mode==='w2')cols=2;
+    else cols=Math.ceil(Math.sqrt(count));
+    cols=Math.max(1,Math.min(cols,count));rows=Math.ceil(count/cols);
+  }
+  const tw=cols*s.w+(cols-1)*GAPB, th=rows*s.h+(rows-1)*GAPB;
+  return {cols,rows,tw,th,s,count};
+}
+const COLORS=['#5fd0ff','#ffcf5f','#ff8f6b','#9b8cff','#5fe39b','#ff7ad0','#7fd0a0','#d0b0ff','#ffd24a','#6bb6ff'];
+function colorFor(id){let h=0;for(let i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))&0xffff;return COLORS[h%COLORS.length];}
+let cam={x:0,y:0,k:1};
+let viewMode='hub'; // 'hub' (по умолчанию, станции) | 'belt' (спагетти-роутинг)
+// Надёжная вставка SVG-разметки в правильном namespace (innerHTML на SVG ненадёжен)
+function setSVG(el,markup){
+  const doc=new DOMParser().parseFromString('<svg xmlns="http://www.w3.org/2000/svg">'+markup+'</svg>','image/svg+xml');
+  const err=doc.querySelector('parsererror');
+  if(err){console.error('SVG parse error:',err.textContent);return;}
+  el.textContent='';
+  Array.from(doc.documentElement.childNodes).forEach(n=>el.appendChild(document.importNode(n,true)));
+}
+const MGAP=2; // зазор в тайлах между членами внутри объединённого блока
+// общий граф для обоих видов: блоки (с союзом 1-в-1) + агрегированные межблочные потоки
+function buildGraph(res){
+  const N=res.nodes;
+  const fuse=$('fuse')&&$('fuse').checked;
+  // потребители и craftable-поставщики (только craftable)
+  const consumers={},cprod={};
+  Object.keys(N).forEach(id=>{
+    cprod[id]=N[id].inEdges.filter(e=>N[e.from]).map(e=>e.from);
+    N[id].inEdges.forEach(e=>{if(N[e.from])(consumers[e.from]=consumers[e.from]||[]).push(id);});
+  });
+  // упаковка по слотам станции: сливаем смежные крафты — связанные ЦЕПОЧКОЙ (один кормит другого)
+  // ИЛИ ОБЩИМ ИМПОРТОМ — пока суммарный сетевой I/O группы ≤ слотов станции (PLS=4 / ILS=5).
+  // так мелкие станции набиваются плотнее (напр. 2 крафта с общим входом → одна PLS на 4 слота).
+  const parent={};Object.keys(N).forEach(id=>parent[id]=id);
+  const find=x=>parent[x]===x?x:(parent[x]=find(parent[x]));
+  const grp={};Object.keys(N).forEach(id=>grp[id]=[id]);   // члены по корню
+  const stCap=STSLOT[($('station')&&$('station').value)||'ils'];
+  // сетевой I/O набора членов: |импорт-предметы| + |экспорт-предметы| (= занятых слотов станции)
+  const ioCount=members=>{
+    const mset=new Set(members), inside=new Set(members.map(m=>N[m].out));
+    const imp=new Set(), exp=new Set();
+    members.forEach(m=>{
+      N[m].inEdges.forEach(e=>{if(!inside.has(e.item))imp.add(e.item);});
+      const o=N[m].out;
+      if(o===res.target||(consumers[m]||[]).some(c=>!mset.has(c)))exp.add(o);
+    });
+    return imp.size+exp.size;
+  };
+  // связаны ли две группы: цепочка (выход одной — вход другой) ИЛИ общий внешний импорт
+  const related=(ma,mb)=>{
+    const outA=new Set(ma.map(m=>N[m].out)), outB=new Set(mb.map(m=>N[m].out));
+    for(const m of ma)for(const e of N[m].inEdges){if(outB.has(e.item))return true;}
+    for(const m of mb)for(const e of N[m].inEdges){if(outA.has(e.item))return true;}
+    const impA=new Set();ma.forEach(m=>N[m].inEdges.forEach(e=>{if(!outA.has(e.item))impA.add(e.item);}));
+    for(const m of mb)for(const e of N[m].inEdges){if(!outB.has(e.item)&&impA.has(e.item))return true;}
+    return false;
+  };
+  if(fuse){
+    // жадно: каждый раунд сливаем пару с НАИМЕНЬШИМ итоговым I/O (плотнее всех заполняет слоты), ≤ stCap
+    let merged=true;
+    while(merged){merged=false;
+      const roots=[...new Set(Object.keys(N).map(find))];
+      let best=null,bestIO=1e9;
+      for(let i=0;i<roots.length;i++)for(let j=i+1;j<roots.length;j++){
+        const ra=roots[i],rb=roots[j];
+        if(!related(grp[ra],grp[rb]))continue;
+        const io=ioCount(grp[ra].concat(grp[rb]));
+        if(io<=stCap && io<bestIO){bestIO=io;best=[ra,rb];}
+      }
+      if(best){const[ra,rb]=best;parent[ra]=rb;grp[rb]=grp[rb].concat(grp[ra]);grp[ra]=[];merged=true;}
+    }
+  }
+  // группы -> блоки
+  const gm={};Object.keys(N).forEach(id=>{const r=find(id);(gm[r]=gm[r]||[]).push(id);});
+  const idToG={};const blocks=[];
+  Object.entries(gm).forEach(([root,members])=>{
+    members.sort((a,b)=>N[a].tier-N[b].tier);
+    members.forEach(m=>idToG[m]=root);
+    const mem=members.map(m=>{const fp=footprint(N[m].b,Math.max(1,Math.ceil(N[m].bld)));
+      const slot=Math.max(fp.tw,Math.ceil((nm(N[m].out).length*5.6+22)/TS)); // слот не уже подписи
+      return {id:m,out:N[m].out,alt:N[m].alt,tag:N[m].tag,b:N[m].b,dem:N[m].dem,fp,slot};});
+    const tier=Math.max(...members.map(m=>N[m].tier));
+    const isFinal=members.some(m=>N[m].out===res.target);
+    blocks.push({kind:'group',root,mem,tier,isFinal,hasAlt:mem.some(m=>m.alt)});
+  });
+  // источники (сырьё/импорт) — рёбра, чей from не является узлом-рецептом
+  const rawSeen={};
+  Object.values(N).forEach(n=>n.inEdges.forEach(e=>{if(e.raw||!N[e.from])rawSeen[e.from]=(rawSeen[e.from]||0)+e.flow;}));
+  Object.entries(rawSeen).forEach(([id,flow])=>blocks.push({kind:'src',root:id,flow,tier:0}));
+  // размеры комнат (тайлы)
+  blocks.forEach(b=>{
+    if(b.kind==='src'){b._rw=SRCWT;b._rh=SRCHT;}
+    else{const tw=b.mem.reduce((s,m)=>s+m.slot,0)+(b.mem.length-1)*MGAP;
+      const th=Math.max(...b.mem.map(m=>m.fp.th));
+      b._tw=tw;b._th=th;b._rw=Math.max(SRCWT,tw+2*RB);b._rh=RHEAD+th+RB;}
+  });
+  // агрегированные межблочные ленты
+  const eAgg={};
+  Object.values(N).forEach(n=>{const toG=idToG[n.id];
+    n.inEdges.forEach(e=>{
+      const internal=N[e.from]&&idToG[e.from]===toG; if(internal)return;
+      const fromKey=N[e.from]?idToG[e.from]:e.from;
+      const k=fromKey+'>'+toG+'>'+e.item;(eAgg[k]=eAgg[k]||{from:fromKey,to:toG,flow:0,item:e.item}).flow+=e.flow;
+    });
+  });
+  const edges=Object.values(eAgg);
+  const blockOf={};blocks.forEach(b=>blockOf[b.root]=b);
+  return {N,blocks,idToG,edges,consumers,cprod,blockOf};
+}
+function layout(res){
+  const {N,blocks,edges,blockOf}=buildGraph(res);
+  // ярусы (сырьё сверху, финал снизу)
+  const rows={};blocks.forEach(b=>{(rows[b.tier]=rows[b.tier]||[]).push(b);});
+  const tierVals=Object.keys(rows).map(Number).sort((a,b)=>a-b);
+  const nT=tierVals.length;
+  const tierIndex={};tierVals.forEach((t,i)=>tierIndex[t]=i);
+  const rowH=tierVals.map(t=>Math.max(...rows[t].map(b=>b._rh)));
+  // --- упорядочивание блоков в ярусах ---
+  // incident[r] = связи узла с весом 1/(дальность по ярусам): короткие соседние связи важнее длинных
+  const incident={};blocks.forEach(b=>incident[b.root]=[]);
+  edges.forEach(e=>{const w=1/Math.max(1,Math.abs(tierIndex[blockOf[e.to].tier]-tierIndex[blockOf[e.from].tier]));
+    if(incident[e.from])incident[e.from].push({o:e.to,w});if(incident[e.to])incident[e.to].push({o:e.from,w});});
+  const order=tierVals.map(t=>rows[t].map(b=>b.root));
+  const cx={},txL={};let innerW=0;
+  function computeX(){
+    const rw=order.map(arr=>arr.reduce((s,r)=>s+blockOf[r]._rw,0)+(arr.length-1)*GX);
+    innerW=Math.max(...rw);
+    order.forEach((arr,ti)=>{let x=Math.round((innerW-rw[ti])/2);
+      arr.forEach(r=>{txL[r]=x;cx[r]=x+blockOf[r]._rw/2;x+=blockOf[r]._rw+GX;});});
+  }
+  computeX();
+  const keyOf=r=>{const ns=incident[r];if(!ns||!ns.length)return cx[r];let s=0,w=0;ns.forEach(e=>{s+=e.w*(cx[e.o]||0);w+=e.w;});return w?s/w:cx[r];};
+  for(let pass=0;pass<8;pass++){const seq=[...order.keys()];if(pass%2)seq.reverse();
+    seq.forEach(ti=>{order[ti].sort((a,b)=>keyOf(a)-keyOf(b));computeX();});}
+  // --- доводка: минимизируем суммарную длину стрелок ---
+  // центры узлов яруса для заданного порядка (соседи зафиксированы текущими cx)
+  const tierXmap=arr=>{const rw=arr.reduce((s,r)=>s+blockOf[r]._rw,0)+(arr.length-1)*GX;
+    let x=Math.round((innerW-rw)/2);const m={};arr.forEach(r=>{m[r]=x+blockOf[r]._rw/2;x+=blockOf[r]._rw+GX;});return m;};
+  const costFor=arr=>{const m=tierXmap(arr);let c=0;
+    arr.forEach(r=>(incident[r]||[]).forEach(e=>{c+=e.w*Math.abs(m[r]-(cx[e.o]||0));}));return c;};
+  const permute=(a,cb)=>{const n=a.length,c=new Array(n).fill(0);cb(a);let i=0;
+    while(i<n){if(c[i]<i){const k=i%2?c[i]:0;[a[i],a[k]]=[a[k],a[i]];cb(a);c[i]++;i=0;}else{c[i]=0;i++;}}};
+  for(let round=0;round<5;round++){let improved=false;
+    order.forEach((arr,ti)=>{if(arr.length<2)return;
+      let best=arr.slice(),bestC=costFor(arr);
+      if(arr.length<=6){const w=arr.slice();permute(w,p=>{const c=costFor(p);if(c<bestC-1e-6){bestC=c;best=p.slice();}});}
+      else{let imp=true;while(imp){imp=false;for(let i=0;i<best.length;i++)for(let j=i+1;j<best.length;j++){
+        const cand=best.slice();[cand[i],cand[j]]=[cand[j],cand[i]];if(costFor(cand)<costFor(best)-1e-6){best=cand;imp=true;}}}}
+      if(best.join('|')!==arr.join('|')){order[ti]=best;computeX();improved=true;}});
+    if(!improved)break;}
+  // --- X-выравнивание: ставим блоки по барицентру связей (а не центр яруса) → линии прямее ---
+  const half=r=>blockOf[r]._rw/2;
+  const placeTier=arr=>{
+    const des=arr.map(r=>{const ns=incident[r];if(!ns||!ns.length)return cx[r];let s=0,w=0;
+      ns.forEach(e=>{if(cx[e.o]!=null){s+=e.w*cx[e.o];w+=e.w;}});return w?s/w:cx[r];});
+    const c=[];for(let i=0;i<arr.length;i++){let x=des[i];
+      if(i>0)x=Math.max(x,c[i-1]+half(arr[i-1])+GX+half(arr[i]));c.push(x);}
+    let sh=0;for(let i=0;i<arr.length;i++)sh+=des[i]-c[i];sh/=arr.length||1;
+    arr.forEach((r,i)=>cx[r]=c[i]+sh);
+  };
+  for(let pass=0;pass<12;pass++){const seq=[...order.keys()];if(pass%2)seq.reverse();seq.forEach(ti=>placeTier(order[ti]));}
+  let minx=Infinity;blocks.forEach(b=>minx=Math.min(minx,cx[b.root]-half(b.root)));
+  blocks.forEach(b=>{cx[b.root]-=minx;txL[b.root]=cx[b.root]-half(b.root);});
+  innerW=Math.max(...blocks.map(b=>txL[b.root]+blockOf[b.root]._rw));
+  // --- порты: разносим точки подключения по ширине комнаты ---
+  const outE={},inE={};blocks.forEach(b=>{outE[b.root]=[];inE[b.root]=[];});
+  edges.forEach(e=>{outE[e.from].push(e);inE[e.to].push(e);});
+  blocks.forEach(b=>{const r=b.root,w=b._rw;
+    const o=outE[r];o.sort((a,c)=>cx[a.to]-cx[c.to]);o.forEach((e,k)=>e._sx=txL[r]+w*(k+1)/(o.length+1));
+    const ii=inE[r];ii.sort((a,c)=>cx[a.from]-cx[c.from]);ii.forEach((e,k)=>e._dx=txL[r]+w*(k+1)/(ii.length+1));});
+  // --- длинные ленты (≥2 яруса): вертикаль по ЧИСТОМУ каналу (под источником/целью, иначе ближайший зазор) ---
+  edges.forEach(e=>{e._rs=tierIndex[blockOf[e.from].tier];e._rd=tierIndex[blockOf[e.to].tier];});
+  const tierBlocks={};blocks.forEach(b=>{const ti=tierIndex[b.tier];(tierBlocks[ti]=tierBlocks[ti]||[]).push([txL[b.root],txL[b.root]+b._rw]);});
+  const clearAt=(x,rs,rd)=>{for(let ti=rs+1;ti<rd;ti++){for(const seg of (tierBlocks[ti]||[]))if(x>seg[0]-1.5&&x<seg[1]+1.5)return false;}return true;};
+  const findChan=(sx,dx,rs,rd)=>{if(clearAt(sx,rs,rd))return sx;if(clearAt(dx,rs,rd))return dx;
+    for(let d=1;d<=innerW+12;d++){if(clearAt(sx-d,rs,rd))return sx-d;if(clearAt(sx+d,rs,rd))return sx+d;}return sx;};
+  edges.forEach(e=>{if(e._rd-e._rs>=2)e._hwx=findChan(e._sx,e._dx,e._rs,e._rd);});
+  let minH=0,maxH=innerW;edges.forEach(e=>{if(e._hwx!=null){minH=Math.min(minH,e._hwx);maxH=Math.max(maxH,e._hwx);}});
+  const leftM=BM+Math.ceil(Math.max(0,-minH)),rightM=BM+Math.ceil(Math.max(0,maxH-innerW));
+  // --- полосы в коридорах (горизонтальные сегменты без наложений) ---
+  const segs={};
+  const addSeg=(c,lo,hi,e,key)=>(segs[c]=segs[c]||[]).push({lo:Math.min(lo,hi),hi:Math.max(lo,hi),e,key});
+  edges.forEach(e=>{if(e._rd-e._rs===1)addSeg(e._rs,e._sx,e._dx,e,'mid');
+    else{addSeg(e._rs,e._sx,e._hwx,e,'top');addSeg(e._rd-1,e._hwx,e._dx,e,'bot');}});
+  const corrLanes={};
+  Object.keys(segs).forEach(c=>{const its=segs[c];its.sort((a,b)=>a.lo-b.lo);const hi=[];
+    its.forEach(it=>{let L=0;while(L<hi.length&&hi[L]>it.lo+0.01)L++;it.lane=L;hi[L]=it.hi;it.e['_ln_'+it.key]=L;});
+    corrLanes[c]=hi.length;});
+  const corrH=tierVals.map((t,ti)=>ti<nT-1?Math.max(4,(corrLanes[ti]||0)+2):0);
+  // --- Y по ярусам с учётом высоты коридоров ---
+  const tierTop=[];let yy=BM;
+  tierVals.forEach((t,ti)=>{tierTop[ti]=yy;yy+=rowH[ti]+corrH[ti];});
+  const Ht=yy+BM,Wt=leftM+innerW+rightM;
+  const pos={};
+  blocks.forEach(b=>{const ti=tierIndex[b.tier];pos[b.root]={tx:txL[b.root]+leftM,ty:tierTop[ti],rw:b._rw,rh:b._rh,blk:b};});
+  // --- координаты ломаных лент (в тайлах) ---
+  const laneY=(c,ln)=>tierTop[c]+rowH[c]+ln+1;
+  edges.forEach(e=>{
+    const s=pos[e.from],d=pos[e.to];
+    const sx=e._sx+leftM,sy=s.ty+s.rh,dx=e._dx+leftM,dy=d.ty;
+    if(e._rd-e._rs===1){const ly=laneY(e._rs,e._ln_mid);e._pts=[[sx,sy],[sx,ly],[dx,ly],[dx,dy]];e._lx=(sx+dx)/2;e._ly=ly;}
+    else{const hx=e._hwx+leftM,lt=laneY(e._rs,e._ln_top),lb=laneY(e._rd-1,e._ln_bot);
+      e._pts=[[sx,sy],[sx,lt],[hx,lt],[hx,lb],[dx,lb],[dx,dy]];e._lx=(sx+hx)/2;e._ly=lt;}
+  });
+  const nBlocks=blocks.filter(b=>b.kind==='group').length;
+  return {pos,blocks,edges,Wt,Ht,W:Wt*TS,H:Ht*TS,target:res.target,nBlocks};
+}
+// ---------- РАСКЛАДКА (хаб-вид): модули-карточки + лог. станции, без роутинга лент ----------
+const STSLOT={ils:5,pls:4};            // слотов на станцию: ILS=5, PLS=4
+const MAXSTACK=4;                      // штабелёр (piler) стекует груз до ×4 на одной ленте
+const HP=1, HPULL=3, OBAR=2, GHX=4, GHY=5, CHIPW=4, BELTW=1, MHEAD=4; // тайлы: поле, строка входов, полоса, зазоры, чип, лента-столбец, шапка крафта (выход+название / входы)
+function layoutHub(res){
+  const {blocks,edges}=buildGraph(res);
+  const groups=blocks.filter(b=>b.kind==='group');
+  const stCap=STSLOT[($('station')&&$('station').value)||'ils'];
+  const beltCap=parseFloat($('belt').value);
+  const aSpd=+$('asm').value,sSpd=+$('smt').value,pf=+$('pf').value,spd=b=>({asm:aSpd,smt:sSpd})[b]||1;
+  // I/O каждого модуля по агрегированным потокам + соседи по сети
+  const io={};groups.forEach(b=>io[b.root]={in:new Map(),out:new Map(),nb:new Set()});
+  edges.forEach(e=>{
+    if(io[e.to]){io[e.to].in.set(e.item,(io[e.to].in.get(e.item)||0)+e.flow);if(io[e.from])io[e.to].nb.add(e.from);}
+    if(io[e.from]){io[e.from].out.set(e.item,(io[e.from].out.get(e.item)||0)+e.flow);if(io[e.to])io[e.from].nb.add(e.to);}
+  });
+  // размеры карточек (тайлы)
+  groups.forEach(b=>{
+    b._head=b.mem.find(m=>m.out===res.target)||b.mem.find(m=>io[b.root].out.has(m.out))||b.mem[b.mem.length-1];
+    // логистический контракт станции: импорт {предмет,поток} и экспорт {предмет,поток} (для финала — цель)
+    const oo=io[b.root].out;
+    b._imp=[...io[b.root].in.entries()].sort((a,c)=>c[1]-a[1]);
+    b._exps=(oo.size?[...oo.entries()]:[[b._head.out,b._head.dem]]).sort((a,c)=>c[1]-a[1]);
+    // belt-line манифолд: лента вниз, крафтеры С ДВУХ СТОРОН (компактнее по площади); лента полна → линия рядом
+    let mtw=0,mth=0;
+    b.mem.forEach(m=>{
+      const r=REC[m.id],s=m.fp.s,cnt=m.fp.count, perBld=60*spd(r.b)/r.t*(r.out[m.out]||1)*(m.out===res.target?1:pf);
+      m._lc=perBld>0?Math.max(1,Math.floor(beltCap/perBld)):cnt;   // зданий на одну ленту (всего, обе стороны)
+      m._lines=Math.max(1,Math.ceil(cnt/m._lc));                   // сколько лент (линий)
+      const perLine=Math.min(cnt,m._lc);
+      m._two=perLine>=2;                                           // занимать ленту с двух сторон
+      m._side=m._two?2:1; m._rows=Math.ceil(perLine/m._side);      // рядов высотой = крафтеров/сторону
+      m._lw=(m._two?2*s.w:s.w)+BELTW;                              // ширина одной линии (бл·лента·бл)
+      m._mw=m._lines*m._lw+(m._lines-1)*GAPB;
+      m._mh=m._rows*s.h+(m._rows-1)*GAPB;
+      // ширина слота: манифолд, либо шапка (выход+название / ряд входов, когда крафтов несколько)
+      const hdrW=b.mem.length>1?Math.max(nm(m.out).length*5.6+40,Object.keys(REC[m.id].in).length*16+4):nm(m.out).length*5.6+22;
+      m._slot=Math.max(m._mw,Math.ceil(hdrW/TS));
+      mtw+=m._slot;mth=Math.max(mth,m._mh);
+    });
+    b._tw=mtw+(b.mem.length-1)*MGAP;b._th=mth;
+    const PILLW=7, CLBL=5;                              // тайлы: пилюля «иконка+поток», этикетка «вход/выход»
+    const idW=Math.ceil(((b.mem.length>1?60:nm(b._head.out).length*6+24)+60)/TS); // идентичность + бейдж
+    const cMax=Math.max(b._imp.length,b._exps.length,1);
+    const contentW=Math.max(b._tw,idW,CLBL+Math.min(cMax,4)*PILLW,CHIPW); // влезает до 4 пилюль в ряд
+    b._cPerRow=Math.max(1,Math.floor((contentW-CLBL)/PILLW));
+    b._impRows=Math.ceil(b._imp.length/b._cPerRow);     // 0, если импорта нет
+    b._expRows=Math.ceil(b._exps.length/b._cPerRow);
+    // верх (тайлы): идентичность(2) + бейдж/лента(2) + вход(impRows·2) + выход(expRows·2) + зазор(1)
+    b._badgeY=2; b._impY=4; b._expY=4+b._impRows*2;
+    b._cellsTop=b._expY+b._expRows*2+1;
+    b._hw=contentW+2*HP;
+    b._hh=b._cellsTop+(b.mem.length>1?MHEAD:0)+b._th+HP; // +строка-шапка над каждым крафтом (когда их несколько)
+    const ioCnt=io[b.root].in.size+io[b.root].out.size;
+    b._stations=Math.max(1,Math.ceil(ioCnt/stCap));b._over=ioCnt>stCap;
+  });
+  // shelf bin-packing: сырьё→финал по тиру (слева-направо, сверху-вниз), позиция свободна — нет лент
+  groups.sort((a,c)=>a.tier-c.tier||c._hw*c._hh-a._hw*a._hh);
+  const totalArea=groups.reduce((s,b)=>s+b._hw*b._hh,0)||1;
+  const maxCard=Math.max(SRCWT,...groups.map(b=>b._hw));
+  const targetW=Math.max(maxCard,Math.ceil(Math.sqrt(totalArea)*1.6));
+  const pos={};let x=0,y=0,shelfH=0,usedW=0;
+  groups.forEach(b=>{
+    if(x>0 && x+b._hw>targetW){x=0;y+=shelfH+GHY;shelfH=0;}
+    pos[b.root]={tx:x+BM,ty:y+BM,rw:b._hw,rh:b._hh,blk:b};
+    x+=b._hw+GHX;shelfH=Math.max(shelfH,b._hh);usedW=Math.max(usedW,x-GHX);
+  });
+  const Wt=usedW+2*BM,Ht=y+shelfH+2*BM;
+  // сеть: только межмодульные предметы (с производителем-модулем), для сметы логистики
+  const net={};edges.forEach(e=>{if(io[e.from]){
+    const it=(net[e.item]=net[e.item]||{flow:0,prod:new Set(),cons:new Set()});
+    it.flow+=e.flow;it.prod.add(e.from);if(io[e.to])it.cons.add(e.to);}});
+  return {pos,blocks:groups,io,net,Wt,Ht,W:Wt*TS,H:Ht*TS,target:res.target,nBlocks:groups.length,stCap,
+    totStations:groups.reduce((s,b)=>s+b._stations,0),overCnt:groups.filter(b=>b._over).length};
+}
+function drawHub(res,cam_g){
+  const L=layoutHub(res);
+  cam_g.innerHTML='';
+  const belt=parseFloat($('belt').value);
+  const stName=(($('station')&&$('station').value)||'ils')==='ils'?t('st_ils'):t('st_pls');
+  const T=v=>v*TS;
+  const defs=`<defs><pattern id="tg" width="${TS}" height="${TS}" patternUnits="userSpaceOnUse">
+    <path d="M${TS} 0 L0 0 0 ${TS}" fill="none" stroke="#1f2940" stroke-width="0.5"/></pattern></defs>`;
+  const board=`<rect class="board" x="0" y="0" width="${T(L.Wt)}" height="${T(L.Ht)}"></rect>
+    <rect x="0" y="0" width="${T(L.Wt)}" height="${T(L.Ht)}" fill="url(#tg)"></rect>`;
+  let svg='';
+  L.blocks.forEach(b=>{
+    const p=L.pos[b.root];if(!p)return;
+    const px=T(p.tx),py=T(p.ty),pw=T(p.rw),ph=T(p.rh);
+    const head=b._head,o=L.io[b.root],totBld=b.mem.reduce((s,m)=>s+m.fp.count,0);
+    // здания членов: belt-line манифолд — лента вниз, крафтеры с двух сторон до ёмкости, потом линия рядом
+    let cells='';let cxt=HP;
+    const multi=b.mem.length>1, cellsY=b._cellsTop+(multi?MHEAD:0);
+    b.mem.forEach((m,mi)=>{
+      const s=m.fp.s,cnt=m.fp.count,slot=m._slot,gx0=cxt+(slot-m._mw)/2;
+      if(multi){
+        cells+=`<rect x="${T(cxt)-3}" y="${T(b._cellsTop)-2}" width="${T(slot)+6}" height="${T(MHEAD+b._th)+4}" rx="3" fill="${mi%2?'rgba(120,160,220,.08)':'rgba(0,0,0,.16)'}"></rect>`;
+        // шапка крафта: выход рецепта (оранжевый) + название; ниже — входы рецепта (синие)
+        const hy=T(b._cellsTop), rin=Object.keys(REC[m.id].in);
+        cells+=`<rect x="${T(cxt)+1}" y="${hy+1}" width="14" height="14" rx="3" fill="rgba(255,159,90,.20)" stroke="#ff9f5a" stroke-width="0.7"></rect>`+
+               iconSVG(m.out,T(cxt)+2.5,hy+2.5,11)+
+               `<text class="nm" x="${T(cxt)+19}" y="${hy+11}" style="font-size:9px">${nm(m.out)} <tspan class="cnt2">×${cnt}</tspan></text>`;
+        rin.forEach((it,ii)=>{const ix=T(cxt)+1+ii*16;
+          cells+=`<rect x="${ix}" y="${hy+18}" width="14" height="14" rx="3" fill="rgba(74,163,255,.18)" stroke="#4aa3ff" stroke-width="0.7"></rect>`+
+                 iconSVG(it,ix+1.5,hy+19.5,11);});
+      }
+      const bi=buildingId(m.b),pcol=colorFor(m.out),leftOff=m._two?s.w+BELTW:BELTW;
+      for(let li=0;li<m._lines;li++){
+        const inThis=li<m._lines-1?m._lc:cnt-(m._lines-1)*m._lc;
+        const rowsThis=Math.ceil(inThis/m._side);
+        const lineX=gx0+li*(m._lw+GAPB), beltX=lineX+s.w, beltCx=T(beltX)+T(BELTW)/2;
+        const top=T(cellsY),bot=top+T(rowsThis*s.h+(rowsThis-1)*GAPB);
+        cells+=`<rect x="${(beltCx-1.5).toFixed(1)}" y="${top}" width="3" height="${(bot-top).toFixed(1)}" rx="1.5" fill="${pcol}" fill-opacity="0.55"></rect>`+
+          `<path class="arrow" d="M${beltCx-3},${bot-7} L${beltCx+3},${bot-7} L${beltCx},${(bot-1).toFixed(1)} Z" fill="${pcol}"></path>`;
+        for(let k=0;k<inThis;k++){
+          const row=Math.floor(k/m._side), side=k%m._side;
+          const bx=T(side===0?lineX:lineX+leftOff),by=T(cellsY+row*(s.h+GAPB)),cw=T(s.w),chh=T(s.h);
+          cells+=`<rect class="bcell" x="${bx}" y="${by}" width="${cw}" height="${chh}" rx="2" fill="${s.c}" fill-opacity="0.35"></rect>`;
+          if(bi){const isz=Math.min(cw,chh)*0.92;cells+=iconSVG(bi,bx+(cw-isz)/2,by+(chh-isz)/2,isz);}
+        }
+      }
+      cxt+=slot+MGAP;
+    });
+    const x0=T(HP);
+    // 1) идентичность станции: иконки = то, что станция ОТГРУЖАЕТ (для мульти-экспорта одна head.out врала)
+    let g;
+    if(b.mem.length>1){
+      const exIds=(b._exps&&b._exps.length)?b._exps.map(e=>e[0]):[head.out];
+      let ix=x0;g='';
+      exIds.forEach(it=>{g+=iconSVG(it,ix,2,14);ix+=16;});                 // все экспортные иконки в ряд
+      g+=`<text class="nm" x="${ix+2}" y="13">${t('stationWord')+' · '+b.mem.length+' '+t('craft')}</text>`;
+    }else{
+      g=iconSVG(head.out,x0,2,14)+`<text class="nm" x="${x0+18}" y="13">${nm(head.out)}</text>`;
+    }
+    // 2) бейдж ILS x+y/з (слева) + «зд/лента» (справа)
+    const stLbl=stName+' '+o.in.size+'+'+o.out.size+'/'+L.stCap, byPx=T(b._badgeY), bw=[...stLbl].reduce((w,c)=>w+(c.charCodeAt(0)>0x2e80?11:5.6),0)+8;
+    const lc=head._lc,lines=head._lines, lk=lines<=1?'ok':lines<=MAXSTACK?'stack':'split';
+    const lcol=lk==='ok'?'#4ade80':lk==='stack'?'#ffd24a':'#ff6b6b';
+    g+=`<g class="sttag${b._over?' over':''}"><rect x="${x0}" y="${byPx}" width="${bw}" height="14" rx="3"></rect>`+
+       `<text x="${x0+bw/2}" y="${byPx+10}" text-anchor="middle">${stLbl}</text></g>`+
+       `<text class="cnt2" x="${pw-T(HP)}" y="${byPx+10}" text-anchor="end" fill="${lcol}">${lc}/${t('perbelt')}${lines>1?' ×'+lines:''}</text>`;
+    // 3) логистический контракт: ВХОД (голубой) и ВЫХОД (жёлтый), с потоками — что завозим и что отгружаем
+    const PILLW=7, IMPC=['rgba(74,163,255,.14)','#4aa3ff'], EXPC=['rgba(255,207,95,.16)','#ffcf5f'];
+    const pill=(it,rate,kind,xi,yPx)=>{const x=x0+T(xi),col=kind==='imp'?IMPC:EXPC,
+      isR=kind==='imp'&&(imported.has(it)||!(res.producersOf&&res.producersOf[it]&&res.producersOf[it].length));
+      return `<g class="pchip"><rect x="${x}" y="${yPx}" width="${T(PILLW)-4}" height="16" rx="3" fill="${col[0]}" stroke="${col[1]}" stroke-width="0.7"${isR?' stroke-dasharray="3 2"':''}></rect>`+
+        iconSVG(it,x+2,yPx+1,14)+
+        `<text x="${x+19}" y="${yPx+11}" style="font-size:9px" fill="${col[1]}">${fmt(rate)}${t('per')}</text>`+
+        `<title>${nm(it)} · ${fmt(rate)}/м · ${kind==='imp'?t('inw'):t('outw')}${isR?' (raw)':''}</title></g>`;};
+    if(b._imp.length){const iy=T(b._impY);
+      g+=`<text class="cnt2" x="${x0}" y="${iy+11}" fill="#4aa3ff">${t('inw')} ↓</text>`;
+      b._imp.forEach(([it,rate],i)=>g+=pill(it,rate,'imp',5+(i%b._cPerRow)*PILLW,iy+Math.floor(i/b._cPerRow)*18));}
+    const ey=T(b._expY);
+    g+=`<text class="cnt2" x="${x0}" y="${ey+11}" fill="#ffcf5f">${t('outw')} ↑</text>`;
+    b._exps.forEach(([it,rate],i)=>g+=pill(it,rate,'exp',5+(i%b._cPerRow)*PILLW,ey+Math.floor(i/b._cPerRow)*18));
+    svg+=`<g class="node hub ${b.isFinal?'final':''} ${b._over?'cap':''}" data-root="${b.root}" data-nb="${[...o.nb].join(' ')}" transform="translate(${px},${py})">
+      <rect class="room" width="${pw}" height="${ph}" rx="4"></rect>
+      ${cells}${g}</g>`;
+  });
+  setSVG(cam_g,defs+board+svg);
+  cam_g._W=L.W;cam_g._H=L.H;
+  // подсветка связанных модулей по наведению — замена нарисованных лент
+  const hubNodes=cam_g.querySelectorAll('g.node.hub');
+  hubNodes.forEach(g=>{
+    g.addEventListener('mouseenter',()=>{
+      const keep=new Set((g.dataset.nb||'').split(' ').filter(Boolean));keep.add(g.dataset.root);
+      hubNodes.forEach(h=>{const on=keep.has(h.dataset.root);h.classList.toggle('dimmed',!on);h.classList.toggle('lit',on);});
+    });
+    g.addEventListener('mouseleave',()=>hubNodes.forEach(h=>{h.classList.remove('dimmed');h.classList.remove('lit');}));
+  });
+  // смета логистики + легенда
+  $('area').insertAdjacentHTML('beforeend',
+    `<div class="row"><span>Модулей</span><span class="v">${L.nBlocks}</span></div>`+
+    `<div class="row"><span>Станций (${stName})</span><span class="v">${L.totStations}</span></div>`+
+    `<div class="row"><span>Предметов в сети</span><span class="v">${Object.keys(L.net).length}</span></div>`+
+    (L.overCnt?`<div class="row"><span style="color:#ff8f6b">Не влезает в станцию</span><span class="v" style="color:#ff8f6b">${L.overCnt}</span></div>`:'')+
+    `<div class="row"><span>Доска целиком</span><span class="v">${L.Wt}×${L.Ht} т.</span></div>`);
+  const lg=$('legend');lg.innerHTML=
+    '<div style="color:#8a98b8;margin-bottom:3px">'+t('leg_intro')+'</div>'+
+    '<div><i style="background:#5fd0ff"></i>'+t('leg_imp')+'</div>'+
+    '<div><i style="background:#ffcf5f"></i>'+t('leg_exp')+'</div>'+
+    '<div><i style="background:#4ade80"></i>'+t('leg_belt')+'</div>'+
+    '<div><i style="background:#ff9f5a"></i>'+t('leg_craft')+'</div>'+
+    '<div><i style="background:#5fd0ff"></i>'+t('leg_badge').replace('{ST}',stName).replace('{N}',L.stCap)+'</div>'+
+    '<div><i style="background:#ffcf5f"></i>'+t('leg_final')+'</div>'+
+    (L.overCnt?'<div><i style="background:#ff6b6b"></i>'+t('leg_over')+'</div>':'');
+}
+function draw(res){
+  const cam_g=$('cam');
+  if(res.error||!Object.keys(res.nodes||{}).length){cam_g.innerHTML='';cam_g._W=10;cam_g._H=10;return;}
+  if(viewMode==='hub'){drawHub(res,cam_g);return;}
+  const L=layout(res);
+  cam_g.innerHTML='';
+  const belt=parseFloat($('belt').value);
+  const T=v=>v*TS; // тайлы -> px
+  // тайл-сетка (паттерн) — единая на всю доску
+  const defs=`<defs><pattern id="tg" width="${TS}" height="${TS}" patternUnits="userSpaceOnUse">
+    <path d="M${TS} 0 L0 0 0 ${TS}" fill="none" stroke="#1f2940" stroke-width="0.5"/></pattern></defs>`;
+  // фон доски + сетка
+  const board=`<rect class="board" x="0" y="0" width="${T(L.Wt)}" height="${T(L.Ht)}"></rect>
+    <rect x="0" y="0" width="${T(L.Wt)}" height="${T(L.Ht)}" fill="url(#tg)"></rect>`;
+  // скруглённая ортогональная ломаная по точкам (px)
+  const RC=4;
+  const rp=pts=>{if(pts.length<2)return '';let d=`M${pts[0][0]},${pts[0][1]}`;
+    for(let i=1;i<pts.length-1;i++){const[ax,ay]=pts[i-1],[bx,by]=pts[i],[cxx,cy]=pts[i+1];
+      const d1=Math.hypot(bx-ax,by-ay)||1,d2=Math.hypot(cxx-bx,cy-by)||1,r=Math.min(RC,d1/2,d2/2);
+      d+=` L${(bx+(ax-bx)/d1*r).toFixed(1)},${(by+(ay-by)/d1*r).toFixed(1)} Q${bx},${by} ${(bx+(cxx-bx)/d2*r).toFixed(1)},${(by+(cy-by)/d2*r).toFixed(1)}`;}
+    const e=pts[pts.length-1];return d+` L${e[0]},${e[1]}`;};
+  // рёбра — ленты-дорожки со стрелками направления и сортерами на входе/выходе
+  let edges='';
+  L.edges.forEach(e=>{
+    const pts=e._pts.map(p=>[T(p[0]),T(p[1])]);
+    const col=colorFor(e.item),belts=Math.ceil(e.flow/belt);
+    edges+=`<path class="edge${belts>1?' over':''}" d="${rp(pts)}" stroke="${col}"></path>`;
+    // сортер на выходе из источника (низ); на входе рисуем СТОЛЬКО стрелок, сколько лент нужно
+    const s0=pts[0], sN=pts[pts.length-1];
+    edges+=`<rect class="sorter" x="${s0[0]-3}" y="${s0[1]-1}" width="6" height="4" rx="1" fill="${col}"></rect>`;
+    const ay=sN[1]-4;
+    for(let k=0;k<belts;k++){const ox=sN[0]+(k-(belts-1)/2)*8;
+      edges+=`<rect class="sorter" x="${ox-3}" y="${sN[1]-3}" width="6" height="4" rx="1" fill="${col}"></rect>`;
+      edges+=`<path class="arrow" d="M${ox-4.5},${ay-7} L${ox+4.5},${ay-7} L${ox},${ay} Z" fill="${col}"></path>`;}
+    edges+=iconSVG(e.item,T(e._lx)+2,T(e._ly)-11,10)+
+           `<text class="elabel${belts>1?' over':''}" x="${T(e._lx)+14}" y="${T(e._ly)-2}">${fmt(e.flow)}${t('per')} · ${belts}🜸</text>`;
+  });
+  // блоки
+  let nodesvg='';
+  L.blocks.forEach(b=>{
+    const p=L.pos[b.root];if(!p)return;
+    const px=T(p.tx),py=T(p.ty),pw=T(p.rw),ph=T(p.rh);
+    if(b.kind==='src'){
+      const lab=imported.has(b.root)?t('belt_imp'):t('belt_mine');
+      nodesvg+=`<g class="node src" transform="translate(${px},${py})">
+        <rect class="room" width="${pw}" height="${ph}" rx="3"></rect>
+        ${iconSVG(b.root,5,4,15)}<text class="nm" x="24" y="15">${nm(b.root)}</text>
+        <text class="sub" x="6" y="29">${lab} · ${fmt(b.flow)}${t('per')}</text></g>`;
+    }else{
+      // постройки членов блока слева направо + подпись над каждым
+      let bgs='',cells='',labels='';
+      let cxt=RB; // курсор по X (тайлы)
+      b.mem.forEach((m,mi)=>{
+        const fp=m.fp,s=fp.s,cnt=fp.count,slot=m.slot;
+        const gx0=cxt+(slot-fp.tw)/2; // центрируем сетку построек в слоте
+        if(b.mem.length>1) // подложка члена (только в объединённом блоке)
+          bgs+=`<rect x="${T(cxt)-3}" y="${T(RHEAD)-2}" width="${T(slot)+6}" height="${T(b._th)+4}" rx="3" fill="${mi%2?'rgba(120,160,220,.08)':'rgba(0,0,0,.16)'}"></rect>`;
+        const bi=buildingId(m.b);
+        for(let i=0;i<cnt;i++){
+          const c=i%fp.cols,r=Math.floor(i/fp.cols);
+          const bx=T(gx0+c*(s.w+GAPB)), by=T(RHEAD+r*(s.h+GAPB)), cw=T(s.w), chh=T(s.h);
+          cells+=`<rect class="bcell" x="${bx}" y="${by}" width="${cw}" height="${chh}" rx="2" fill="${s.c}" fill-opacity="0.35"></rect>`;
+          if(bi){const isz=Math.min(cw,chh)*0.92;cells+=iconSVG(bi,bx+(cw-isz)/2,by+(chh-isz)/2,isz);}
+        }
+        labels+=iconSVG(m.out,T(cxt),1,13)+
+                `<text class="nm" x="${T(cxt)+16}" y="12">${nm(m.out)}</text>`+
+                `<text class="${m.alt?'altlbl':'cnt2'}" x="${T(cxt)}" y="23">×${cnt} · ${m.alt?'⟲'+m.tag+' · ':''}${fmt(m.dem)}${t('per')}</text>`;
+        cxt+=slot+MGAP;
+      });
+      nodesvg+=`<g class="node ${b.isFinal?'final':''} ${b.hasAlt?'alt':''}" transform="translate(${px},${py})">
+        <rect class="room" width="${pw}" height="${ph}" rx="3"></rect>
+        ${bgs}${cells}${labels}</g>`;
+    }
+  });
+  setSVG(cam_g,defs+board+edges+nodesvg);
+  cam_g._W=L.W;cam_g._H=L.H;
+  $('area').insertAdjacentHTML('beforeend',
+    `<div class="row"><span>Цехов (блоков)</span><span class="v">${L.nBlocks}</span></div>`+
+    `<div class="row"><span>Доска целиком</span><span class="v">${L.Wt}×${L.Ht} т.</span></div>`);
+  // легенда — только используемые типы построек
+  const used=new Set();L.blocks.forEach(b=>{if(b.mem)b.mem.forEach(m=>used.add(m.b));});
+  const lg=$('legend');lg.innerHTML=
+    '<div style="color:#8a98b8;margin-bottom:3px">1 клетка = 1 тайл · 🜸 = лент '+$('belt').selectedOptions[0].textContent.split(' ')[0]+'</div>'+
+    [...used].map(b=>{const s=SIZE[b]||SIZE.asm;return `<div><i style="height:10px;width:10px;background:${s.c}"></i>${s.n} ${s.w}×${s.h}</div>`;}).join('');
+}
+function applyCam(){$('cam').setAttribute('transform',`translate(${cam.x},${cam.y}) scale(${cam.k})`);}
+function fit(){
+  const g=$('cam');const W=g._W||1000,H=g._H||600;
+  const sv=$('stage').getBoundingClientRect();
+  if(!sv.width||!sv.height){requestAnimationFrame(fit);return;} // ещё не свёрстано — ретрай
+  const k=Math.max(.1,Math.min(sv.width/(W+60),sv.height/(H+60),1.2));
+  cam.k=k;cam.x=(sv.width-W*k)/2;cam.y=(sv.height-H*k)/2;applyCam();
+}
+
+// ---------- ВЗАИМОДЕЙСТВИЕ ----------
+const stage=$('stage');
+let drag=null;
+stage.addEventListener('mousedown',e=>{drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y};stage.classList.add('drag');});
+window.addEventListener('mousemove',e=>{if(!drag)return;cam.x=drag.cx+(e.clientX-drag.x);cam.y=drag.cy+(e.clientY-drag.y);applyCam();});
+window.addEventListener('mouseup',()=>{drag=null;stage.classList.remove('drag');});
+stage.addEventListener('wheel',e=>{e.preventDefault();
+  const r=stage.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;
+  const f=e.deltaY<0?1.12:1/1.12;const nk=Math.max(.2,Math.min(3,cam.k*f));
+  cam.x=mx-(mx-cam.x)*(nk/cam.k);cam.y=my-(my-cam.y)*(nk/cam.k);cam.k=nk;applyCam();},{passive:false});
+// тач: 1 палец — панорама, 2 пальца — пинч-зум
+let tch=null;const tdist=ts=>Math.hypot(ts[0].clientX-ts[1].clientX,ts[0].clientY-ts[1].clientY);
+stage.addEventListener('touchstart',e=>{
+  if(e.touches.length===1)tch={m:'pan',x:e.touches[0].clientX,y:e.touches[0].clientY,cx:cam.x,cy:cam.y};
+  else if(e.touches.length===2)tch={m:'zoom',d:tdist(e.touches),k:cam.k,cx:cam.x,cy:cam.y,mx:(e.touches[0].clientX+e.touches[1].clientX)/2,my:(e.touches[0].clientY+e.touches[1].clientY)/2};
+},{passive:true});
+stage.addEventListener('touchmove',e=>{if(!tch)return;e.preventDefault();const r=stage.getBoundingClientRect();
+  if(tch.m==='pan'&&e.touches.length===1){cam.x=tch.cx+(e.touches[0].clientX-tch.x);cam.y=tch.cy+(e.touches[0].clientY-tch.y);applyCam();}
+  else if(tch.m==='zoom'&&e.touches.length===2){const nk=Math.max(.2,Math.min(3,tch.k*tdist(e.touches)/tch.d)),mx=tch.mx-r.left,my=tch.my-r.top;
+    cam.x=mx-(mx-tch.cx)*(nk/tch.k);cam.y=my-(my-tch.cy)*(nk/tch.k);cam.k=nk;applyCam();}
+},{passive:false});
+stage.addEventListener('touchend',()=>{tch=null;});
+
+// --- состояние: permalink (URL-хэш) + localStorage ---
+function syncView(){
+  $('view').textContent=viewMode==='hub'?t('view_hub'):t('view_belt');
+  $('station').parentElement.style.display=viewMode==='hub'?'':'none';
+}
+// ---- LZString (URI-safe subset, 1.4.4) — сжатие конфига для короткой ссылки ----
+const LZ=(function(){
+  var k="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",f=String.fromCharCode;
+  var rev={};for(var i=0;i<k.length;i++)rev[k.charAt(i)]=i;
+  function _c(uncompressed,bitsPerChar,getCharFromInt){
+    if(uncompressed==null)return"";
+    var i,value,cd={},cdc={},cc="",cw="",cwc="",enlargeIn=2,dictSize=3,numBits=2,data=[],dval=0,dpos=0,ii;
+    for(ii=0;ii<uncompressed.length;ii+=1){
+      cc=uncompressed.charAt(ii);
+      if(!Object.prototype.hasOwnProperty.call(cd,cc)){cd[cc]=dictSize++;cdc[cc]=true;}
+      cwc=cw+cc;
+      if(Object.prototype.hasOwnProperty.call(cd,cwc)){cw=cwc;}
+      else{
+        if(Object.prototype.hasOwnProperty.call(cdc,cw)){
+          if(cw.charCodeAt(0)<256){
+            for(i=0;i<numBits;i++){dval=(dval<<1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}}
+            value=cw.charCodeAt(0);
+            for(i=0;i<8;i++){dval=(dval<<1)|(value&1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=value>>1;}
+          }else{
+            value=1;
+            for(i=0;i<numBits;i++){dval=(dval<<1)|value;if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=0;}
+            value=cw.charCodeAt(0);
+            for(i=0;i<16;i++){dval=(dval<<1)|(value&1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=value>>1;}
+          }
+          enlargeIn--;if(enlargeIn==0){enlargeIn=Math.pow(2,numBits);numBits++;}
+          delete cdc[cw];
+        }else{
+          value=cd[cw];
+          for(i=0;i<numBits;i++){dval=(dval<<1)|(value&1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=value>>1;}
+        }
+        enlargeIn--;if(enlargeIn==0){enlargeIn=Math.pow(2,numBits);numBits++;}
+        cd[cwc]=dictSize++;cw=String(cc);
+      }
+    }
+    if(cw!==""){
+      if(Object.prototype.hasOwnProperty.call(cdc,cw)){
+        if(cw.charCodeAt(0)<256){
+          for(i=0;i<numBits;i++){dval=(dval<<1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}}
+          value=cw.charCodeAt(0);
+          for(i=0;i<8;i++){dval=(dval<<1)|(value&1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=value>>1;}
+        }else{
+          value=1;
+          for(i=0;i<numBits;i++){dval=(dval<<1)|value;if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=0;}
+          value=cw.charCodeAt(0);
+          for(i=0;i<16;i++){dval=(dval<<1)|(value&1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=value>>1;}
+        }
+        enlargeIn--;if(enlargeIn==0){enlargeIn=Math.pow(2,numBits);numBits++;}delete cdc[cw];
+      }else{
+        value=cd[cw];
+        for(i=0;i<numBits;i++){dval=(dval<<1)|(value&1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=value>>1;}
+      }
+      enlargeIn--;if(enlargeIn==0){enlargeIn=Math.pow(2,numBits);numBits++;}
+    }
+    value=2;
+    for(i=0;i<numBits;i++){dval=(dval<<1)|(value&1);if(dpos==bitsPerChar-1){dpos=0;data.push(getCharFromInt(dval));dval=0;}else{dpos++;}value=value>>1;}
+    while(true){dval=(dval<<1);if(dpos==bitsPerChar-1){data.push(getCharFromInt(dval));break;}else dpos++;}
+    return data.join('');
+  }
+  function _d(length,resetValue,getNextValue){
+    var dictionary=[],enlargeIn=4,dictSize=4,numBits=3,entry="",result=[],i,w,bits,resb,maxpower,power,c,
+    data={val:getNextValue(0),position:resetValue,index:1};
+    for(i=0;i<3;i+=1){dictionary[i]=i;}
+    bits=0;maxpower=Math.pow(2,2);power=1;
+    while(power!=maxpower){resb=data.val&data.position;data.position>>=1;if(data.position==0){data.position=resetValue;data.val=getNextValue(data.index++);}bits|=(resb>0?1:0)*power;power<<=1;}
+    switch(bits){
+      case 0:bits=0;maxpower=Math.pow(2,8);power=1;while(power!=maxpower){resb=data.val&data.position;data.position>>=1;if(data.position==0){data.position=resetValue;data.val=getNextValue(data.index++);}bits|=(resb>0?1:0)*power;power<<=1;}c=f(bits);break;
+      case 1:bits=0;maxpower=Math.pow(2,16);power=1;while(power!=maxpower){resb=data.val&data.position;data.position>>=1;if(data.position==0){data.position=resetValue;data.val=getNextValue(data.index++);}bits|=(resb>0?1:0)*power;power<<=1;}c=f(bits);break;
+      case 2:return"";
+    }
+    dictionary[3]=c;w=c;result.push(c);
+    while(true){
+      if(data.index>length){return"";}
+      bits=0;maxpower=Math.pow(2,numBits);power=1;
+      while(power!=maxpower){resb=data.val&data.position;data.position>>=1;if(data.position==0){data.position=resetValue;data.val=getNextValue(data.index++);}bits|=(resb>0?1:0)*power;power<<=1;}
+      switch(c=bits){
+        case 0:bits=0;maxpower=Math.pow(2,8);power=1;while(power!=maxpower){resb=data.val&data.position;data.position>>=1;if(data.position==0){data.position=resetValue;data.val=getNextValue(data.index++);}bits|=(resb>0?1:0)*power;power<<=1;}dictionary[dictSize++]=f(bits);c=dictSize-1;enlargeIn--;break;
+        case 1:bits=0;maxpower=Math.pow(2,16);power=1;while(power!=maxpower){resb=data.val&data.position;data.position>>=1;if(data.position==0){data.position=resetValue;data.val=getNextValue(data.index++);}bits|=(resb>0?1:0)*power;power<<=1;}dictionary[dictSize++]=f(bits);c=dictSize-1;enlargeIn--;break;
+        case 2:return result.join('');
+      }
+      if(enlargeIn==0){enlargeIn=Math.pow(2,numBits);numBits++;}
+      if(dictionary[c]){entry=dictionary[c];}else{if(c===dictSize){entry=w+w.charAt(0);}else{return null;}}
+      result.push(entry);
+      dictionary[dictSize++]=w+entry.charAt(0);
+      enlargeIn--;w=entry;
+      if(enlargeIn==0){enlargeIn=Math.pow(2,numBits);numBits++;}
+    }
+  }
+  return {compress:function(s){return s==null?"":_c(s,6,function(a){return k.charAt(a);});},
+    decompress:function(s){if(s==null)return"";if(s=="")return null;s=s.replace(/ /g,"+");return _d(s.length,32,function(i){return rev[s.charAt(i)];});}};
+})();
+function _setEq(a,b){if(a.size!==b.size)return false;for(const x of a)if(!b.has(x))return false;return true;}
+function getState(){const pr=$('preset').value,pim=new Set(PRESET_IMPORTS[pr]||[]),pal=new Set(PRESETS[pr]||[]);
+  const S={t:targetId,r:$('rate').value,a:$('asm').value,s:$('smt').value,p:$('pf').value,
+  b:$('belt').value,sh:$('shape').value,st:$('station').value,f:$('fuse').checked?1:0,
+  v:viewMode,pr:pr,l:lang,c:(($('side')&&$('side').style.display==='none')?1:0),ver:2};
+  if(!_setEq(imported,pim))S.im=[...imported];   // храним массивы только если отличаются от пресета
+  if(!_setEq(enabledAlts,pal))S.al=[...enabledAlts];
+  return S;}
+function applyState(S){try{
+  if(S.l&&I18N[S.l])lang=S.l;
+  if(S.pr)$('preset').value=S.pr;
+  if(S.t&&PREF[S.t]){targetId=S.t;tsel.value=nm(targetId);}
+  if(S.r!=null)$('rate').value=S.r;
+  [['a','asm'],['s','smt'],['p','pf'],['b','belt'],['sh','shape'],['st','station']].forEach(([k,id])=>{if(S[k]!=null)$(id).value=S[k];});
+  if(S.f!=null)$('fuse').checked=!!S.f;
+  const _pr=S.pr||$('preset').value;                                   // сидируем дефолтами пресета…
+  imported=new Set(PRESET_IMPORTS[_pr]||[]);enabledAlts=new Set(PRESETS[_pr]||[]);
+  if(Array.isArray(S.im))imported=new Set(S.im);                       // …и переопределяем, если заданы явно
+  if(Array.isArray(S.al))enabledAlts=new Set(S.al);
+  if(S.v)viewMode=S.v;
+  if(S.c!=null&&$('side'))$('side').style.display=S.c?'none':'';
+  return true;
+}catch(e){return false;}}
+let _saveT;
+function saveState(){const j=JSON.stringify(getState());
+  try{localStorage.setItem('dspc',j);}catch(e){}                       // localStorage — обычный JSON
+  clearTimeout(_saveT);_saveT=setTimeout(()=>{try{history.replaceState(null,'','#'+LZ.compress(j));}catch(e){}},200);}
+function decodeHash(h){                                                 // новый формат — LZ; старый (%7B…) — percent-JSON
+  if(h[0]==='%'){try{return JSON.parse(decodeURIComponent(h));}catch(e){return null;}}
+  try{const s=LZ.decompress(h);if(s){const o=JSON.parse(s);if(o&&typeof o==='object')return o;}}catch(e){}
+  try{return JSON.parse(decodeURIComponent(h));}catch(e){}
+  return null;}
+function loadState(){let S=null;
+  if(location.hash.length>1)S=decodeHash(location.hash.slice(1));
+  if(!S){try{const j=localStorage.getItem('dspc');if(j)S=JSON.parse(j);}catch(e){}}
+  return S;}
+function setTitle(){try{document.title=nm(targetId)+' · '+$('rate').value+t('per')+' — DSP';}catch(e){document.title='DSP Factory Calculator';}}
+function run(){const res=compute();renderPanels(res);draw(res);setTitle();saveState();}
+['rate','asm','smt','pf','belt','fuse','shape','station'].forEach(id=>$(id).addEventListener('change',()=>{run();}));
+$('rate').addEventListener('input',()=>run());
+$('fit').onclick=fit;
+function syncPanelBtn(){const b=$('togpanel');if(b&&$('side'))b.classList.toggle('active',$('side').style.display!=='none');}
+$('togpanel').onclick=()=>{const s=$('side');s.style.display=(s.style.display!=='none')?'none':'';
+  syncPanelBtn();saveState();requestAnimationFrame(()=>requestAnimationFrame(fit));};
+// --- поделиться / экспорт ---
+function flash(b,msg){const o=b.dataset._o||b.textContent;b.dataset._o=o;b.textContent=msg;b.disabled=true;
+  setTimeout(()=>{b.textContent=o;b.disabled=false;},1100);}
+function copyText(txt,btn){if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>flash(btn,t('copied')),()=>prompt('Copy:',txt));
+  else prompt('Copy:',txt);}
+$('share').onclick=()=>{const j=JSON.stringify(getState());try{history.replaceState(null,'','#'+LZ.compress(j));}catch(e){}copyText(location.href,$('share'));};
+$('leghelp').onclick=()=>$('legend').classList.toggle('show');
+// Спрайт для экспорта нужен как data:URI — только он НЕ «пачкает» canvas (toBlob иначе кидает SecurityError на file://).
+// Грузим по требованию: <script src> работает и по file://, в отличие от fetch (CORS). Фолбэк — fetch→dataURI (http).
+let _spriteP=null;
+function spriteSrc(){
+  if(window.SPRITE_B64)return Promise.resolve(window.SPRITE_B64);
+  if(_spriteP)return _spriteP;
+  _spriteP=new Promise(res=>{const s=document.createElement('script');s.src='./assets/sprite-data.js';
+    s.onload=()=>res(window.SPRITE_B64||null);s.onerror=()=>res(null);document.head.appendChild(s);})
+    .then(d=>d||fetch(ICONURL).then(r=>r.blob()).then(b=>new Promise(r2=>{const fr=new FileReader();fr.onload=()=>r2(fr.result);fr.onerror=()=>r2(ICONURL);fr.readAsDataURL(b);})).catch(()=>ICONURL));
+  return _spriteP;
+}
+$('png').onclick=()=>{const cam=$('cam'),btn=$('png');if(!cam||!cam._W)return;
+  btn.textContent='…';btn.disabled=true;
+  const done=msg=>{btn.disabled=false;btn.textContent=msg||'PNG';if(msg)setTimeout(()=>{btn.textContent='PNG';},2200);};
+  spriteSrc().then(srcUri=>{
+    const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n')+'\nsvg{width:auto;height:auto}text{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}';
+    const W=Math.ceil(cam._W),H=Math.ceil(cam._H),pad=18,FW=W+2*pad,FH=H+2*pad,sc=2;
+    const inner=cam.innerHTML.replace(/<image\b[^>]*>/g,'').replace(/<\/image>/g,''); // без иконок (дорисуем растром)
+    const svgStr=`<svg xmlns="http://www.w3.org/2000/svg" width="${FW}" height="${FH}" viewBox="0 0 ${FW} ${FH}"><style>${css}</style><rect width="${FW}" height="${FH}" fill="#0e1320"/><g transform="translate(${pad},${pad})">${inner}</g></svg>`;
+    const cv=document.createElement('canvas');cv.width=FW*sc;cv.height=FH*sc;const ctx=cv.getContext('2d');
+    const svgImg=new Image(),sprite=new Image();let n=0;
+    const compose=()=>{if(++n<2)return;
+      try{
+        ctx.setTransform(sc,0,0,sc,0,0);ctx.drawImage(svgImg,0,0,FW,FH);
+        // позиция каждой иконки — через getCTM относительно cam (getBoundingClientRect врёт: вложенный <image> переполняет viewBox)
+        const camInv=cam.getCTM().inverse();
+        cam.querySelectorAll('svg[viewBox]').forEach(el=>{const c=el.getCTM();if(!c)return;
+          const vb=el.getAttribute('viewBox').split(/\s+/);if(vb.length<4)return;
+          const m=camInv.multiply(c),sx=+vb[0],sy=+vb[1],sw=+vb[2],sh=+vb[3];
+          ctx.drawImage(sprite,sx,sy,sw,sh,m.a*sx+m.e+pad,m.d*sy+m.f+pad,sw*m.a,sh*m.d);});
+        cv.toBlob(bl=>{if(!bl){done('⚠');return;}const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='dsp-'+targetId+'.png';
+          document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);done();},'image/png');
+      }catch(e){done('⚠');}};
+    svgImg.onload=compose;svgImg.onerror=()=>done('⚠');sprite.onload=compose;sprite.onerror=()=>done('⚠');
+    sprite.src=srcUri;svgImg.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
+  });};
+function applyPreset(name){enabledAlts=new Set(PRESETS[name]||[]);
+  imported=new Set(PRESET_IMPORTS[name]||[]);   // импорт по пресету (лейт: графен/нанотрубки/серная кислота)
+  // лейт-гейм: лучшие тиры — Mk.III лента/сборщик/пролифератор + плоскостная плавильня
+  if(name==='late'){$('belt').value='1800';$('asm').value='1.5';$('pf').value='1.25';$('smt').value='2';}
+}
+$('preset').addEventListener('change',()=>{applyPreset($('preset').value);run();});
+$('view').onclick=()=>{viewMode=viewMode==='hub'?'belt':'hub';syncView();
+  run();requestAnimationFrame(()=>requestAnimationFrame(fit));};
+function setLang(l){lang=l;try{localStorage.setItem('dsp-lang',l);}catch(e){}
+  applyLang();syncView();run();                 // мгновенно: chrome (имена — en, пока грузится локаль)
+  loadLoc(l).then(()=>{applyLang();run();});}    // локаль загрузилась → перерисовать с локальными именами
+$('lang').addEventListener('click',e=>{const b=e.target.closest('button[data-l]');if(b)setLang(b.dataset.l);});
+// старт: URL-хэш > localStorage > пресет «лейт»; язык — из состояния, иначе из отдельного ключа dsp-lang
+const _S=loadState();
+if(_S&&applyState(_S)){}else{applyPreset($('preset').value);}
+if(!(_S&&_S.l)){const dl=localStorage.getItem('dsp-lang');if(dl&&I18N[dl])lang=dl;}
+if((!_S||_S.c==null)&&window.innerWidth<=760&&$('side'))$('side').style.display='none'; // на мобиле панель по умолчанию свёрнута
+syncPanelBtn(); // подсветка тоггла под текущее состояние панели
+loadLoc(lang).then(()=>{applyLang();syncView();run();requestAnimationFrame(()=>requestAnimationFrame(fit));});
+window.addEventListener('load',()=>setTimeout(fit,60));
+window.addEventListener('resize',fit);
+// PWA: офлайн-кэш. Регистрируем SW только по http(s) (не по file://), чтобы не падало при локальном открытии.
+if('serviceWorker'in navigator&&location.protocol.startsWith('http')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
