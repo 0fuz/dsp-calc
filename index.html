@@ -160,7 +160,7 @@
     <div class="ctl"><label data-i18n="presetAlts">Пресет альтов</label>
       <select id="preset"><option value="late" selected data-i18n="preset_late">лейт-гейм ⛏ редкие руды</option><option value="base" data-i18n="preset_base">базовый (без альтов)</option></select></div>
     <div class="totbtn">
-      <div class="langsel" id="lang" title="Language / Язык / 语言"><button data-l="ru">Рус</button><button data-l="en">EN</button><button data-l="zh">中文</button></div>
+      <div class="langsel" id="lang" title="Language / Язык / 语言"><button data-l="en">EN</button><button data-l="ru">Рус</button><button data-l="zh">中文</button></div>
       <button id="view">▦ Вид: хабы</button><button id="fit">⤢ <span data-i18n="fit">Вписать</span></button><button id="share" data-i18n="share" title="Скопировать ссылку на сборку">Ссылка</button><button id="png" title="Сохранить раскладку PNG">PNG</button></div>
   </header>
   <div class="main">
@@ -245,7 +245,7 @@ const RAWX={'iron-ore':[30,'u_vein'],'copper-ore':[30,'u_vein'],'silicon-ore':[3
   'crude-oil':[60,'u_pumpjack'],'water':[50,'u_pump'],'hydrogen':[null,'u_gas'],'deuterium':[null,'u_frac'],'fire-ice':[null,'u_gas']};
 
 // ---------- I18N (ru / en / zh) — переводится chrome UI; названия предметов остаются англ. ----------
-let lang='ru';
+let lang='en';   // язык по умолчанию для первого визита; выбор пользователя помнится в dsp-lang
 const I18N={
  ru:{title:'DSP — крафты: расчёт + раскладка',search:'искать крафт…',target:'Цель',perMin:'шт/мин',presetAlts:'Пресет альтов',preset_late:'лейт-гейм ⛏ редкие руды',preset_base:'базовый (без альтов)',view_hub:'▦ Вид: хабы',view_belt:'≋ Вид: ленты',fit:'Вписать',
   settings:'Настройки',assembler:'Сборщик',smelter:'Плавильня',smt_arc:'Дуговая',smt_plane:'Плоскостная',proliferator:'Пролифератор',pf_none:'нет',belt:'Лента',fuse:'объединять цепочки',shape:'Форма',sh_belt:'компактно',sh_sq:'квадрат',sh_w2:'узкий ×2',sh_row:'ряд',sh_col:'колонка',station:'Станция',builds:'Постройки (всего)',mining:'Добыча (оценка)',alts:'Альт-рецепты',alts_note:'Напр. «Refined Oil ← reforming-refine»: −33% сырой нефти ценой угля + утилизация водорода-побочки.',imports_h:'Считать как импорт',imports_note:'Сними галку — и узел раскроется в полную цепочку.',
