@@ -53,6 +53,10 @@ python3 -m http.server 8000
 # → http://localhost:8000
 ```
 
+## See also
+
+- [Awesome Dyson Sphere Program](https://github.com/0fuz/awesome-dyson-sphere-program) — a community-curated list of DSP tools, mods, and resources (which I also maintain).
+
 ## Credits & licensing
 
 - **Game:** *Dyson Sphere Program* © [Youthcat Studio](https://store.steampowered.com/developer/YouthcatGames/) / Gamera Games. This is an unofficial fan-made tool, not affiliated with or endorsed by the developers.

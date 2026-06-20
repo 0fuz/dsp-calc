@@ -53,6 +53,10 @@ python3 -m http.server 8000
 # → http://localhost:8000
 ```
 
+## 相关
+
+- [Awesome Dyson Sphere Program](https://github.com/0fuz/awesome-dyson-sphere-program) —— 社区整理的 DSP 工具、模组与资源清单（也由我维护）。
+
 ## 致谢与许可
 
 - **游戏：** *戴森球计划* © [柚子猫工作室（Youthcat Studio）](https://store.steampowered.com/developer/YouthcatGames/) / Gamera Games。本工具为非官方爱好者作品，与开发者无关，也未获其背书。
